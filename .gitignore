@@ -1,0 +1,5 @@
+#     Running the script makes a horribly gaudy folder. So to improve
+# The tester's experience when pushing things up, I made a simple 
+# .gitignore file. 
+#                               With love, Ted Moseley
+__pycache__/
