@@ -1,26 +1,29 @@
 #! /usr/bin/python3
 
 ## Standard
-# N/A
+import sys
 ## Dependencies
 import click
 ## Scripts
-import tadman_config_write
-import tadman_config_read
+import autotools_config_write
+import autotools_config_read
+import autotools_config_proc
 
 @click.command()
 @click.argument('path')
 def main(path):
 
-    config_txt_path = tadman_config_write.write_config_txt(path)
-    config_options_list = tadman_config_read.make_options_list(config_txt_path)
+    config_txt_path = autotools_config_write.write_config_txt(path)
+    
+    if config_txt_path == None:
+        print("This directory does not have a configure file.")
+        sys.exit(97)
+    config_options_list = autotools_config_read.make_options_list(config_txt_path)
+    filt_list = autotools_config_proc.autotool_new_processor(config_options_list)
 
+    for x in filt_list:
+        print(x)
 
-    out_line_number = 0
-
-    for a_line in config_options_list:
-        print("%d\t%s" % (out_line_number, a_line), end="")
-        out_line_number += 1
 
 if __name__ == '__main__':
     main()
