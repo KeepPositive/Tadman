@@ -8,7 +8,18 @@ import subprocess
 ## Scripts
 # N/A
 
+""" This function reads the help message from the configure file, and outputs
+the message to a file.
+"""
+
 def write_config_txt(path):
+
+    """ As stated above, this function reads the help message from the
+    configure file, and outputs the message to a file called 'config_out.txt'. 
+    
+    This function returns the path to the 'config_out.txt'. If the file path 
+    that it is given does not exist, it returns a None.
+    """
 
     in_path = path
     configure_file_path = "%s/configure" % in_path
