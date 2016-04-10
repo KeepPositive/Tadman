@@ -89,6 +89,11 @@ def autotool_new_processor(a_list):
     uses all the functions above in a kinda smart way to clean up all of 
     the lines from autotools_config_write.
 
+    This function returns a processed list of lists containing options in the 
+    format of:
+        
+        [title, cli_option, help_message]
+    
     """
 
     filtered_list = []
