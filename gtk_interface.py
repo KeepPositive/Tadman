@@ -3,7 +3,9 @@ manager! I'm really proud with how this is all turning out. But there
 are a few tidbits I would like to improve still, like searching, and adding
 values to options with an equals at the end.
 """
-
+### Standard
+## N/A
+### Dependencies
 import gi
 gi.require_version('Gtk', '3.0')
 import gi.repository.Gtk as Gtk
@@ -17,14 +19,14 @@ class TadmanGtkGui(Gtk.Window):
     being used.
     """
 
-    def __init__(self, mode, in_list):
+    def __init__(self, mode, pack_name, in_list):
 
         """ Initialize all of the internal and external parts of the GUI. """
 
         self.mode = mode
         self.options_list = in_list
         self.toggle_list = []
-        self.entry_list = []
+        self.info_list = []
 
         list_length = len(in_list)
         self.list_range = range(list_length)
@@ -41,13 +43,16 @@ class TadmanGtkGui(Gtk.Window):
         left_box = Gtk.VBox()
         right_box = Gtk.VBox()
         scrolly = Gtk.ScrolledWindow()
+        button_box = Gtk.HBox()
         self.list_model = Gtk.ListStore(str, bool)
         self.tree_view = Gtk.TreeView(model=self.list_model, activate_on_single_click=True)
         #self.tree_view.connect('cursor-changed', self.change_help_message)
 
         # Initialize buttons and smaller things
         run_button = Gtk.Button(label='Run')
+        cancel_button = Gtk.Button(label='Cancel')
         self.help_message = Gtk.Label("Welcome to Tadman!")
+        self.package_name = Gtk.Entry()
         #search_bar = Gtk.Entry()
         cell = Gtk.CellRendererText()
         toggle = Gtk.CellRendererToggle()
@@ -63,17 +68,20 @@ class TadmanGtkGui(Gtk.Window):
         column_two.set_fixed_width(25)
         self.select = self.tree_view.get_selection()
         self.select.connect("changed", self.tree_selection_changed)
-        # Options for a search bar, but does not really work well
-        #self.tree_view.set_enable_search(True)
+        # Note: Here are options for a search bar, but does not really work well
+        self.tree_view.set_enable_search(False)
         #self.tree_view.set_search_column(0)
         #self.tree_view.set_search_entry(search_bar)
 
         # Configure button(s)
-        run_button.connect('clicked', self.run_options)
+        run_button.connect('clicked', self.run_was_pressed)
+        cancel_button.connect('clicked', self.cancel_was_pressed)
         toggle.connect('toggled', self.cell_was_toggled)
         self.help_message.set_line_wrap(True)
         self.help_message.set_width_chars(30)
         self.help_message.set_max_width_chars(30)
+        self.help_message.set_justify(Gtk.Justification.CENTER)
+        self.package_name.set_text(pack_name)
 
         # Start placing containers in containers and widgets in containers.
         self.add(notebook_window)
@@ -82,12 +90,15 @@ class TadmanGtkGui(Gtk.Window):
         main_box.pack_start(right_box, True, False, 5)
         #left_box.pack_start(search_bar, False, False, 2)
         left_box.pack_start(scrolly, True, True, 0)
-        left_box.pack_end(run_button, False, False, 0)
+        left_box.pack_end(button_box, False, False, 2)
+        button_box.pack_start(run_button, True, True, 4)
+        button_box.pack_start(cancel_button, True, True, 4)
         self.tree_view.append_column(column_one)
         self.tree_view.append_column(column_two)
         scrolly.add(self.tree_view)
+        right_box.pack_start(self.package_name, False, False, 1)
         right_box.pack_start(Gtk.Label("Number of options: %d" % list_length), False, False, 1)
-        right_box.pack_start(self.help_message, False, False, 5)
+        right_box.pack_start(self.help_message, False, False, 10)
 
     def cell_was_toggled(self, widget, path):
 
@@ -122,37 +133,46 @@ class TadmanGtkGui(Gtk.Window):
                 if model[treeiter][0] in self.options_list[index]:
                     self.help_message.set_text(self.options_list[index][2])
 
-    def run_options(self, widget):
+    def run_was_pressed(self, widget):
 
-        """ When the run button is hit, the GUI closes, and the list of options
-        is set in a variable.
+        """ When the run button is hit, the current options in the name entry 
+        box and the toggle options selected are saved to a list, and the GUI 
+        closes.
         """
+
+        self.info_list.append(self.package_name.get_text())
+        self.info_list.append(self.toggle_list)
 
         Gtk.main_quit()
 
-    def get_toggle_values(self):
+    def cancel_was_pressed(self, widget):
 
-        """ Retrieve the toggled value list, consisting of options check off
-        just before the GUI closed.
+        """ Similar to run_was_pressed, but sets all options to none, and
+        then closes the GUI.
         """
 
-        return self.toggle_list
+        self.info_list = [None, None]
+
+        Gtk.main_quit()
+
+    def get_info(self):
+
+        return self.info_list
 
 
-
-def gui_main(mode, a_list):
+def gui_main(mode, in_path, a_list):
 
     """ A main function to run the entire GUI. Nothing all that special."""
 
-    window = TadmanGtkGui(mode, a_list)
+    window = TadmanGtkGui(mode, in_path, a_list)
     window.show_all()
     Gtk.main()
 
-    return window.get_toggle_values()
+    return window.get_info()
 
 
 if __name__ == '__main__':
     # For testing purposes ;)
     OPTIONS = [['YOOO', '--enable-yo', "Enable native slang support in browser"],
                ['Squiddy', '--disable-squid', "Disable the standard Squiddy theme"]]
-    print(TadmanGtkGui('autotools', OPTIONS))
+    GUI = gui_main('autotools', '/os/root/ted_test-3.2.1', OPTIONS)

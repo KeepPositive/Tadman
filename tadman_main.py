@@ -13,21 +13,30 @@ import cmake_config_write
 import cmake_config_read
 import cmake_config_proc
 import gtk_interface
+import name_filter
 
 @click.command()
-@click.option('--dump', '-d', multiple=True, is_flag=True, 
+@click.option('-n', default='',
+              help="Substitute standard package name with TEXT")
+@click.option('--dump', is_flag=True, 
               help="Print raw options list to stdout (for debugging)")
-@click.option('--remove', '-r', multiple=True, is_flag=True, 
+@click.option('--remove', is_flag=True, 
               help="Remove previous config_out.txt file")
 @click.argument('path')
-def main(path, remove, dump):
+def main(path, n, dump, remove):
 
     configure_file_path = "%s/configure" % path
     cmakelists_file_path = "%s/CMakeLists.txt" % path
     config_out_file_path = "%s/config_out.txt" % path
     filtered_list = ()
     build_type = ()
-   
+    package_name = ()
+
+    if not n:
+        package_name = name_filter.main_filter(path)
+    else:
+        package_name = n
+
     if remove:
         try:
             os.remove(config_out_file_path)
@@ -70,8 +79,9 @@ def main(path, remove, dump):
 
     if dump:
         print(config_options_list)
-
-    interface = gtk_interface.gui_main(build_type, filtered_list)
+    
+    print(package_name)
+    interface = gtk_interface.gui_main(build_type, package_name, filtered_list)
     # Print the options once the GUI closes.
     print(interface)
 
