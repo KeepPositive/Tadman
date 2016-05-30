@@ -1,28 +1,49 @@
 = Tadman
 
-_Some Package Manager Written in Python_
+Some Package Manager Written in Python
 
-This is a (universal?) package manager that is currently in developement. It is being designed to act as wrapper for basic commands like the autotools build process and CMake. It will also be written in (_hopefully_) pure python, and have very few dependencies.
-
+This is a (universal?) package manager that is currently in developement. It
+is being designed to act as wrapper for basic commands like autotools and
+CMake. It is written in pure python, and has very few dependencies.
 
 == Dependencies
 
-The only dependencies so far are:
+The necessary dependencies are:
 
 * Python 3 (_obviously_)
-* click, a Python CLI module (You can find it [here](http://click.pocoo.org/6/))
-* pygobject ( for the GTK+ 3 interface )
+* click, a Python CLI module (You can find it 
+link:http://click.pocoo.org/6/[here])
+* pygobject (for the GTK+ 3 interface)
 
 Some optional dependencies are:
 
-* CMake, to build CMake projects (You can find it [here](https://cmake.org/))
+* CMake, to build CMake projects (You can find it 
+https://cmake.org/[here])
+
+== Installation
+
+Tadman can be install using git and setuptools like so:
+
+```
+$ git clone https://github.com/KeepPositive/Tadman.git
+$ cd Tadman
+# python3 setup.py install
+```
+
+You should now have an executable named ``tadman`` in your path.
 
 == Execution
 
-Tadman should make building source code packages easier. Right now, there is no system in place to build a Tadman executable or even install the scripts. Until then, you can test it by running the following:
+Tadman should make building source code packages easier. Try it out by 
+downloading some source code that uses autotools or CMake, and then run the
+following:
+
 ```
-  $ git clone https://github.com/KeepPositive/Tadman.git
-  $ cd Tadman
-  $ python3 tadman_main.py [PATH_TO_SOURCE_CODE]
+$ python3 tadman_main.py [PATH_TO_SOURCE_CODE]
 ```
-It _should_ open a small list of configuration options available for the program you wish to install. Try checking some of them off and then hitting the run button! It should also print a list of the options you just chose (no matter if it is Autotools or CMake based) once the GUI exits.
+
+A GTK+ 3 GUI will open, where you can check off the options you want, or 
+leave the ones you don't blank. Then make sure the proper program name and
+version are set on the right via the text boxes. Once you are ready, hit 
+run, and assuming you have all of the dependencies necessary, your program 
+will be installed. 

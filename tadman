@@ -1,0 +1,119 @@
+#! /usr/bin/python3
+
+## Standard
+import os
+import subprocess
+import sys
+## Dependencies
+import click
+## Scripts
+import tad_autotools.processor as aproc
+import tad_autotools.reader as aread
+import tad_autotools.writer as awrite
+import tad_cmake.processor as cproc
+import tad_cmake.reader as cread
+import tad_cmake.writer as cwrite
+import tad_interface.gtk_main as tad_gui
+import tad_tools.config_build as config_build
+import tad_tools.name_split as name_split
+import tad_tools.symbolic_linker as sym_linker
+
+@click.command()
+@click.option('--dump', is_flag=True, 
+              help="Print raw options list to stdout (for debugging)")
+@click.option('--remove', is_flag=True, 
+              help="Remove previous config_out.txt file")
+@click.argument('path')
+def main(path, dump, remove):
+
+    package_name, package_version = name_split.name_version_split(path)
+    package_title = "%s%s" % (package_name, package_version)
+
+    #print("Name: %s" % package_name)
+    #print("Version: %s" % package_version)
+
+    configure_file_path = "%s/configure" % path
+    cmakelists_file_path = "%s/CMakeLists.txt" % path
+    config_out_file_path = "%s/config_out.txt" % path
+    
+    filtered_list = ()
+    build_type = ()
+    
+    if os.geteuid() != 0:
+        print("Only root can execute this command")
+        sys.exit(1)
+
+    if remove:
+        try:
+            os.remove(config_out_file_path)
+            print("Removed config_out.txt")
+        except FileNotFoundError:
+            print("No config_out.txt to remove")
+
+    if os.path.isfile(configure_file_path):
+
+        build_type = 'autotools'
+
+        if os.path.isfile(config_out_file_path):
+            print("Previous config_out.txt found!")
+        else:
+            awrite.write_config_txt(path)
+
+        raw_options_list = aread.make_options_list(config_out_file_path)
+        filtered_options_list = aproc.autotool_new_processor(raw_options_list)
+
+    elif os.path.isfile(cmakelists_file_path):
+
+        build_type = 'cmake'
+        
+        print("WARNING: Program dependencies required prior to config!", 
+              file=sys.stderr)
+
+        if os.path.isfile(config_out_file_path):
+            print("Previous config_out.txt found!")
+        else:
+            cwrite.write_config_txt(path)
+        
+        raw_options_list = cread.make_options_list(config_out_file_path)
+        filtered_options_list = cproc.cmake_processor(raw_options_list)
+    
+    else:
+        print("This directory does not have a configure file")
+        sys.exit(97)
+    # Print out some useful info for debugging
+    if dump:
+        print(raw_options_list)
+    
+    # Start the GTK-based GUI
+    interface = tad_gui.gui_main(build_type, package_name, 
+                                 package_version, filtered_options_list)
+    
+    # If the GUI was exited
+    if interface == []:
+        print("Tadman exited.")
+        sys.exit(0)
+    
+    # Create list of the confiuration options which can be used by subprocess
+    configuration = config_build.configure_maker(build_type, interface)
+    print(configuration)   
+    updated_title = "%s-%s" % (interface[0], interface[1])
+
+    if package_title != updated_title:
+        package_title = updated_title
+
+    package_destination = "%s%s" % ("/usr/local/tadman/", package_title)
+    # Change directories to the source directory
+    os.chdir(path)
+    # Configure the sources
+    subprocess.run(configuration)
+    
+    subprocess.run(['make', '-j', '9'])
+
+    tadman_path = "DESTDIR=%s" % package_destination
+    # Install to the tadman folder
+    subprocess.run(['make', tadman_path, 'install'])
+    # Link from tadman folder to root directory
+    sym_linker.sym_farm(package_destination, '')
+
+if __name__ == '__main__':
+    main()
