@@ -98,6 +98,10 @@ def build_package(a_path):
     install_directory_flag = "DESTDIR=/usr/local/tadman/%s" % updated_title
     subprocess.run(['make', install_directory_flag, 'install'])
 
+def print_help_message():
+    print("Usage: tadman [ARGUMENT] [PATH_OR_NAME]")
+
+
 def main_thing(argument, a_path):
 
     if os.geteuid() != 0:
@@ -115,10 +119,13 @@ def main_thing(argument, a_path):
         sym_linker.sym_reap(a_path)
     else:
         print("Invalid argument passed")
-        print("Usage: python main_thing.py [ARGUMENT] [PATH_OR_NAME]")
+        print_help_message()
 
 # Here is the actual script, isn't it cute? :D
-arg = sys.argv[1]
-path = sys.argv[2]
+try:
+    arg = sys.argv[1]
+    path = sys.argv[2]
 
-main_thing(arg, path)
+    main_thing(arg, path)
+except IndexError:
+    print_help_message()

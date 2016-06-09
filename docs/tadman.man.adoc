@@ -1,0 +1,22 @@
+= tadman(8)
+Ted Moseley
+v0.0.1b
+:manmanual: TADMAN
+:mansource: TADMAN
+
+== NAME
+
+tadman - A portable package manager
+
+== Synopsis
+
+*tadman* [OPTIONS]... PATH
+
+== Options
+
+ --dump 		Print out info (for debugging purposes)
+
+ -n		Set the name of the package to be installed manually
+
+ --remove 	Remove the previously generated list of options
+

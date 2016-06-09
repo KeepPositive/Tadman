@@ -11,8 +11,6 @@ CMake. It is written in pure python, and has very few dependencies.
 The necessary dependencies are:
 
 * Python 3 (_obviously_)
-* click, a Python CLI module (You can find it 
-link:http://click.pocoo.org/6/[here])
 * pygobject (for the GTK+ 3 interface)
 
 Some optional dependencies are:
@@ -22,7 +20,8 @@ https://cmake.org/[here])
 
 == Installation
 
-Tadman can be install using git and setuptools like so:
+Tadman can be install using git and setuptools using the following commands
+on a GNU/Linux system:
 
 ```
 $ git clone https://github.com/KeepPositive/Tadman.git
@@ -39,7 +38,7 @@ downloading some source code that uses autotools or CMake, and then run the
 following:
 
 ```
-$ python3 tadman_main.py [PATH_TO_SOURCE_CODE]
+$ python3 tadman_main.py [ARGUMENT] [PATH]
 ```
 
 A GTK+ 3 GUI will open, where you can check off the options you want, or 
@@ -47,3 +46,6 @@ leave the ones you don't blank. Then make sure the proper program name and
 version are set on the right via the text boxes. Once you are ready, hit 
 run, and assuming you have all of the dependencies necessary, your program 
 will be installed. 
+
+For a complete list of availble arguments, check out
+link:docs/tadman.man.adoc[the man page].

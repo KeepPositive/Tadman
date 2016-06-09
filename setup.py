@@ -4,8 +4,7 @@ setup(
     # Package info
     name='tadman',
     description="Some package manager written in Python",
-    version = "0.0.1",
-    install_requires = ['Click'],
+    version = "0.0.2",
     # Author and Project info
     author = "Ted Moseley",
     author_email = "tmoseley1106@gmail.com",
