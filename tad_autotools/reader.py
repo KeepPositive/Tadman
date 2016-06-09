@@ -25,7 +25,11 @@ def find_first(search_list, length, phrase):
     """
     
     for a_line in range(0, length):
+
+        #found_occurance = ()
+
         if search_list[a_line] == phrase:
+            #print("FOUND IT!")
             found_occurance = a_line
             break
 

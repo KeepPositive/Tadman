@@ -5,7 +5,7 @@ import os
 import subprocess
 import sys
 ## Dependencies
-import click
+# N/A
 ## Scripts
 import tad_autotools.processor as aproc
 import tad_autotools.reader as aread
@@ -18,38 +18,21 @@ import tad_tools.config_build as config_build
 import tad_tools.name_split as name_split
 import tad_tools.symbolic_linker as sym_linker
 
-@click.command()
-@click.option('--dump', is_flag=True, 
-              help="Print raw options list to stdout (for debugging)")
-@click.option('--remove', is_flag=True, 
-              help="Remove previous config_out.txt file")
-@click.argument('path')
-def main(path, dump, remove):
+def build_package(a_path):
 
-    package_name, package_version = name_split.name_version_split(path)
-    package_title = "%s%s" % (package_name, package_version)
+    # Package info which can be gathered from the path name
+    package_name, package_version = name_split.name_version_split(a_path)
+    package_title = "%s-%s" % (package_name, package_version)
 
-    #print("Name: %s" % package_name)
-    #print("Version: %s" % package_version)
+    # Paths defining where some files may be.
+    autogen_file_path = "%s/autogen.sh" % a_path
+    cmakelists_file_path = "%s/CMakeLists.txt" % a_path
+    configure_file_path = "%s/configure" % a_path
 
-    configure_file_path = "%s/configure" % path
-    cmakelists_file_path = "%s/CMakeLists.txt" % path
-    config_out_file_path = "%s/config_out.txt" % path
-    
-    filtered_list = ()
-    build_type = ()
-    
-    if os.geteuid() != 0:
-        print("Only root can execute this command")
-        sys.exit(1)
+    # Where the file with all options should be output to
+    config_out_file_path = "%s/config_out.txt" % a_path
 
-    if remove:
-        try:
-            os.remove(config_out_file_path)
-            print("Removed config_out.txt")
-        except FileNotFoundError:
-            print("No config_out.txt to remove")
-
+    # Find out what type of build is available 
     if os.path.isfile(configure_file_path):
 
         build_type = 'autotools'
@@ -76,14 +59,21 @@ def main(path, dump, remove):
         
         raw_options_list = cread.make_options_list(config_out_file_path)
         filtered_options_list = cproc.cmake_processor(raw_options_list)
-    
+
+    elif os.path.isfile(autogen_file_path):
+
+        build_type = 'autotools'
+        
+        os.chdir(path)
+        subprocess.run(['./autogen.sh'])
+        awrite.write_config_txt(path)
+        raw_options_list = aread.make_options_list(config_out_file_path)
+        filtered_options_list = aproc.autotool_new_processor(raw_options_list)
+
     else:
         print("This directory does not have a configure file")
         sys.exit(97)
-    # Print out some useful info for debugging
-    if dump:
-        print(raw_options_list)
-    
+ 
     # Start the GTK-based GUI
     interface = tad_gui.gui_main(build_type, package_name, 
                                  package_version, filtered_options_list)
@@ -93,27 +83,42 @@ def main(path, dump, remove):
         print("Tadman exited.")
         sys.exit(0)
     
-    # Create list of the confiuration options which can be used by subprocess
+    # Create list of the configuration options which can be used by subprocess
     configuration = config_build.configure_maker(build_type, interface)
-    print(configuration)   
     updated_title = "%s-%s" % (interface[0], interface[1])
-
-    if package_title != updated_title:
-        package_title = updated_title
-
-    package_destination = "%s%s" % ("/usr/local/tadman/", package_title)
+    package_destination = "%s%s" % ("/usr/local/tadman/", updated_title)
     # Change directories to the source directory
-    os.chdir(path)
+    os.chdir(a_path)
+    print("changed to %s" % a_path)
     # Configure the sources
     subprocess.run(configuration)
-    
+    # Build the sources
     subprocess.run(['make', '-j', '9'])
+    # Install it in the Tadman directory
+    install_directory_flag = "DESTDIR=/usr/local/tadman/%s" % updated_title
+    subprocess.run(['make', install_directory_flag, 'install'])
 
-    tadman_path = "DESTDIR=%s" % package_destination
-    # Install to the tadman folder
-    subprocess.run(['make', tadman_path, 'install'])
-    # Link from tadman folder to root directory
-    sym_linker.sym_farm(package_destination, '')
+def main_thing(argument, a_path):
 
-if __name__ == '__main__':
-    main()
+    if os.geteuid() != 0:
+        print("Only root can execute this command")
+        sys.exit(1)
+
+    if argument == 'build':
+        print("Building")
+        build_package(a_path)
+    elif argument == 'install':
+        print("Installing")
+        sym_linker.sym_farm(a_path)
+    elif argument == 'uninstall':
+        print("Uninstalling")
+        sym_linker.sym_reap(a_path)
+    else:
+        print("Invalid argument passed")
+        print("Usage: python main_thing.py [ARGUMENT] [PATH_OR_NAME]")
+
+# Here is the actual script, isn't it cute? :D
+arg = sys.argv[1]
+path = sys.argv[2]
+
+main_thing(arg, path)
