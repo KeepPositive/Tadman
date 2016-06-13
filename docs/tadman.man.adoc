@@ -1,22 +1,42 @@
 = tadman(8)
 Ted Moseley
-v0.0.1b
+v0.0.2b
 :manmanual: TADMAN
 :mansource: TADMAN
 
 == NAME
 
-tadman - A portable package manager
+tadman - A portable package manager written in Python
 
-== Synopsis
+== SYNOPSIS
 
-*tadman* [OPTIONS]... PATH
+*tadman* [ARGUMENT] PATH_OR_NAME
 
-== Options
+== DESCRIPTION
 
- --dump 		Print out info (for debugging purposes)
+Tadman is a portable and universal package manager which can run on any 
+GNU/Linux based operating system. It is written in pure python and 
+possesses very few dependencies. 
 
- -n		Set the name of the package to be installed manually
+The idea is that Tadman first acts as a wrapper around pre-exisiting build
+systems. Currently, Tadman is able to build GNU Autotools and CMake based
+projects. It then installs the compiled sources in the '/usr/local/tadman'
+directory. Here, packages are placed within their own folders. 
 
- --remove 	Remove the previously generated list of options
+The contents of these folders are then linked to the '/usr/bin' through a 
+system of symlinks. 
 
+Similarly, Tadman can _uninstall_ packages by removing all installed links. 
+
+== ARGUMENTS
+
+*build*          Run the standard configuration, build and install process
+
+*install*        Link files in a package's install directory to /usr/bin
+
+*uninstall*      Unlink files from /usr/bin
+
+== COPYING
+
+Copyright \(C) 2016 Ted Moseley. Free use of this software is granted under
+the terms of the MIT License.

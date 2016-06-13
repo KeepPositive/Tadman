@@ -14,9 +14,11 @@ import tad_cmake.processor as cproc
 import tad_cmake.reader as cread
 import tad_cmake.writer as cwrite
 import tad_interface.gtk_main as tad_gui
+import tad_interface.gtk_install as tad_install
 import tad_tools.config_build as config_build
 import tad_tools.name_split as name_split
 import tad_tools.symbolic_linker as sym_linker
+import tad_tools.logger
 
 def build_package(a_path):
 
@@ -72,7 +74,7 @@ def build_package(a_path):
 
     else:
         print("This directory does not have a configure file")
-        sys.exit(97)
+        sys.exit(1)
  
     # Start the GTK-based GUI
     interface = tad_gui.gui_main(build_type, package_name, 
@@ -98,12 +100,16 @@ def build_package(a_path):
     install_directory_flag = "DESTDIR=/usr/local/tadman/%s" % updated_title
     subprocess.run(['make', install_directory_flag, 'install'])
 
+    install_interface = tad_install()
+    if install_interface.get_choice():
+        print("Installing")
+        sym_linker.sym_farm(a_path)
+
 def print_help_message():
     print("Usage: tadman [ARGUMENT] [PATH_OR_NAME]")
 
-
 def main_thing(argument, a_path):
-
+    # Check if you are root user
     if os.geteuid() != 0:
         print("Only root can execute this command")
         sys.exit(1)
@@ -111,12 +117,15 @@ def main_thing(argument, a_path):
     if argument == 'build':
         print("Building")
         build_package(a_path)
+
     elif argument == 'install':
         print("Installing")
         sym_linker.sym_farm(a_path)
+
     elif argument == 'uninstall':
         print("Uninstalling")
         sym_linker.sym_reap(a_path)
+
     else:
         print("Invalid argument passed")
         print_help_message()

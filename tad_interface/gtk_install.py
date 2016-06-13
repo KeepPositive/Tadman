@@ -9,6 +9,7 @@ class InstallGtkGui(Gtk.Window):
     def __init__(self):
 
         self.install_choice = ()
+        self.command = command_to_run
 
         Gtk.Window.__init__(self, title="Install?")
 

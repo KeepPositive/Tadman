@@ -1,6 +1,8 @@
-from setuptools import setup
+import os
+import setuptools
+import subprocess
 
-setup( 
+setuptools.setup( 
     # Package info
     name='tadman',
     description="Some package manager written in Python",
@@ -17,7 +19,19 @@ setup(
                 "tad_tools"],
 
     scripts = ["tadman"]
+)
 
-    #entry_points = {
-    #    "console_scripts": ['tadman = tad_main.main:main']}
-) 
+try:
+
+    input_file = "%s/docs/tadman.man.adoc" % os.getcwd() 
+    output_file = "/usr/share/man/man8/tadman.8"
+
+    subprocess.call(["asciidoctor", "--backend", "manpage",
+                     "--doctype", "manpage", 
+                     "--out-file", output_file, 
+                     input_file])
+
+except FileNotFoundError:
+    print("Documentation not installed. Please install Asciidoctor")
+else:
+    print("Tadman manpage installed at %s" % output_file)
