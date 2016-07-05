@@ -142,7 +142,6 @@ class TadmanGtkGui(Gtk.Window):
         box and the toggle options selected are saved to a list, and the GUI 
         closes.
         """
-
         Gtk.main_quit()
 
         self.info_list.append(self.package_name.get_text())
@@ -172,6 +171,8 @@ def gui_main(mode, pack_name, pack_version, a_list):
     window = TadmanGtkGui(mode, pack_name, pack_version, a_list)
     window.show_all()
     Gtk.main()
+
+    window.hide()
 
     return window.get_info()
 

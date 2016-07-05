@@ -6,12 +6,11 @@ import gi.repository.Gtk as Gtk
 
 class InstallGtkGui(Gtk.Window):
 
-    def __init__(self):
+    def __init__(self, package_name):
 
         self.install_choice = ()
-        self.command = command_to_run
 
-        Gtk.Window.__init__(self, title="Install?")
+        Gtk.Window.__init__(self, title="Install")
 
         self.set_default_size(300, 100)
         self.set_resizable(False)
@@ -20,7 +19,8 @@ class InstallGtkGui(Gtk.Window):
         main_box = Gtk.VBox()
         button_box = Gtk.HBox() 
         
-        intro_label = Gtk.Label("Would you like to install?")
+        install_message = "Would you like to install %s?" % package_name
+        intro_label = Gtk.Label(install_message)
         install_button = Gtk.Button(label='Install')
         cancel_button = Gtk.Button(label='Cancel')
 
@@ -47,12 +47,15 @@ class InstallGtkGui(Gtk.Window):
 
         Gtk.main_quit()
 
-    def get_choice():
+    def get_choice(self):
 
         return self.install_choice
 
-if __name__ == '__main__':
-    window = InstallGtkGui()
+def gui_main(package_name):
+
+    window = InstallGtkGui(package_name)
     window.show_all()
     Gtk.main()
+
+    return window.get_choice()
 

@@ -1,7 +1,5 @@
 # Standard
 import os
-# Scripts
-import logger
 
 def sym_farm(package_path_or_name):
 
@@ -17,8 +15,6 @@ def sym_farm(package_path_or_name):
         start_dir = "/usr/local/tadman/%s" % package_path_or_name
     else:
         print("Package not found in database")
-
-    logger.logger(start_dir, 'Install')
 
     for root, dirs, files in os.walk(start_dir):
 
@@ -37,25 +33,28 @@ def sym_farm(package_path_or_name):
                 print("Directory %s already exists" % sub_fold)
 
         file_list = []
-        
+
         # For each file within the starting directory
         for name in files:
+
+            if name == 'tad.log':
+                continue
 
             rel_path = os.path.join(root, name)
             abs_path = os.path.abspath(rel_path)
             new_path = rel_path[sub_length:]
 
-            os.symlink(abs_path, new_path) 
+            os.symlink(abs_path, new_path)
             file_list.append(new_path)
-            print("Linking %s --> %s" % (new_path, abs_path))
+            print("%s --> %s" % (new_path, abs_path))
 
         print()
 
 def sym_reap(package_path_or_name):
-    
-    """ 
+
+    """
      This function removes any exisiting links that were created by the
-    sym_farm function while installing a package. It is almost like 
+    sym_farm function while installing a package. It is almost like
     uninstall the package so to speak.
 
     This function does not return anything.
@@ -71,22 +70,25 @@ def sym_reap(package_path_or_name):
     for root, dirs, files in os.walk(unlink_path):
 
         sub_length = len(unlink_path)
-        
+
         # For each file within the starting directory
         for name in files:
-            
+
+            if name == 'tad.log':
+                continue
+
             rel_path = os.path.join(root, name)
             abs_path = os.path.abspath(rel_path)
             new_path = abs_path[sub_length:]
-            
+
             if os.path.islink(new_path):
                 os.remove(new_path)
-                print("Unlinking %s -x> %s" % (new_path, abs_path))
+                print("%s -x> %s" % (new_path, abs_path))
             else:
                 print("%s is not a link" % new_path)
 
 
-    # For each subdirectory within the starting directory    
+    # For each subdirectory within the starting directory
     for root, dirs, files in os.walk(unlink_path):
 
         directory_list = []
@@ -101,11 +103,11 @@ def sym_reap(package_path_or_name):
         for directory in directory_list:
 
             if not os.path.isdir(directory):
-                print("Directory %s does not exist" % directory)              
-            elif not os.listdir(directory) == []:
+                print("Directory %s does not exist" % directory)
+            elif os.listdir(directory) != []:
                 print("Directory %s is not empty" % directory)
             else:
                 os.remove(directory)
                 print("Removing %s" % directory)
-        
+
     print()
