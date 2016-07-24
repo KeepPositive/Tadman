@@ -28,7 +28,7 @@ def find_build_type(a_path):
         if os.path.isfile(config_out_file_path):
             print("Previous config_out.txt found!")
         else:
-            awrite.write_config_txt(path)
+            awrite.write_config_txt(a_path)
 
         raw_options_list = aread.make_options_list(config_out_file_path)
         filtered_options_list = aproc.autotool_new_processor(raw_options_list)
@@ -43,7 +43,7 @@ def find_build_type(a_path):
         if os.path.isfile(config_out_file_path):
             print("Previous config_out.txt found!")
         else:
-            cwrite.write_config_txt(path)
+            cwrite.write_config_txt(a_path)
 
         raw_options_list = cread.make_options_list(config_out_file_path)
         filtered_options_list = cproc.cmake_processor(raw_options_list)
@@ -52,9 +52,9 @@ def find_build_type(a_path):
 
         build_type = 'autotools'
 
-        os.chdir(path)
+        os.chdir(a_path)
         subprocess.run(['./autogen.sh'])
-        awrite.write_config_txt(path)
+        awrite.write_config_txt(a_path)
         raw_options_list = aread.make_options_list(config_out_file_path)
         filtered_options_list = aproc.autotool_new_processor(raw_options_list)
 
@@ -68,6 +68,8 @@ def configure_package(a_path):
     build_type, options_list = find_build_type(a_path)
     interface = tad_build.gui_main(build_type, package_name,
                                    package_version, options_list)
+
+    print(options_list)
 
     if interface == []:
         print("Tadman exited.")
