@@ -61,7 +61,7 @@ def autotool_clean(a_pair):
     clean_second = a_pair[1].lstrip()
     clean_second = clean_second.capitalize()
 
-    return([clean_first, a_pair[0], clean_second])
+    return [clean_first, a_pair[0], clean_second]
 
 
 def autotool_message_merge(a_pair):
@@ -80,56 +80,6 @@ def autotool_message_merge(a_pair):
     for x in range(1, lines_of_message):
         print(a_pair(x))
 
-
-def autotool_new_processor(a_list):
-
-    """ This is kinda like the main function of the script. It essentially
-    uses all the functions above in a kinda smart way to clean up all of
-    the lines from autotools_config_write.
-
-    This function returns a processed dictionary containing options in the
-    format of:
-
-        title: [cli_option, help_message]
-
-    """
-
-    filtered_list = []
-    processed_list = []
-    # Split lines consisting of flag and help message into a list
-    for a_string in a_list [1:]:
-        filtered_list.append(autotool_filter(a_string))
-
-    index_offset = 0
-    count = 1
-
-    while count < 3:
-        for x in filtered_list:
-
-            index = filtered_list.index(x) - index_offset
-            pair_length = len(x)
-
-            if x[0] == '':
-                filtered_list[index - (1 + index_offset)].append(x[1])
-                filtered_list.pop(index - (index_offset))
-        count += 1
-
-    for y in filtered_list:
-
-        index = filtered_list.index(y)
-
-        if len(y) > 2:
-
-            new_message = "%s %s" % (y[1], y[2].lstrip())
-            new_pair = [y[0], new_message]
-            filtered_list.remove(y)
-            filtered_list.insert(index, new_pair)
-
-    for z in filtered_list:
-        processed_list.append(autotool_clean(z))
-
-    return processed_list
-
 def option_to_title(an_option):
 
     option = an_option.replace('-', ' ')
@@ -139,6 +89,16 @@ def option_to_title(an_option):
     return option
 
 def autotool_newer_processor(a_list):
+
+    """ This is kinda like the main function of the script. It essentially
+    uses all the functions above in a kinda smart way to clean up all of
+    the lines from autotools_config_write.
+
+    This function returns a processed dictionary containing options in the
+    format of:
+
+        title: [cli_option, help_message]
+    """
 
     filtered_list = []
     output_dict = collections.OrderedDict()

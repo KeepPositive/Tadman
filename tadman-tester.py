@@ -3,6 +3,7 @@ import tad_autotools.reader as aread
 import tad_autotools.writer as awrite
 import tad_interface.curses_main
 import tad_interface.gtk_main
+import tad_tools.config_build
 
 def tester(a_path):
     config_out_file_path = "%s/config_out.txt" % a_path
@@ -15,6 +16,7 @@ def tester(a_path):
 
 if __name__ == '__main__':
     test_dict = tester("/home/tedm1/Source/openbox-3.6.1")
+    #print(test_dict)
     """
     option_list = []
     for item in test_dict:
@@ -24,14 +26,19 @@ if __name__ == '__main__':
     for item in option_list:
         print(test_dict[item][1])
     """
-    """
+    #"""
     interface = tad_interface.curses_main.CursesInterface(test_dict, 'openbox',
                                                           '3.6.1', 'autotools')
     if interface.main_loop():
-        print(interface.get_return_values())
-    """
+        inter_out = interface.get_return_values()
+        #print(inter_out)
     #"""
+    """
     interface = tad_interface.gtk_main.gui_main(test_dict, 'openbox',
                                                 '3.6.1', 'autotools')
     print(interface)
+    """
+    #"""
+    conf = tad_tools.config_build.configure_maker(test_dict, inter_out[2], 'autotools')
+    #print(conf)
     #"""

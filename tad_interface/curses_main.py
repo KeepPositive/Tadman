@@ -54,7 +54,7 @@ def line_wrapper(a_string, length):
 
         return string_list
 
-class CursesInterface():
+class MainInterface():
 
     """ This is the class for the Tadman curses interface. It is
     relatively simple, but still retains a large amount of
@@ -66,10 +66,12 @@ class CursesInterface():
         self.option_dict = a_dict
         self.option_list = []
         self.toggle_dict = {}
+        self.options_avail = 0
 
         for item in self.option_dict:
             self.option_list.append(item)
             self.toggle_dict[item] = False
+            self.options_avail += 1
 
         self.package_name = name
         self.package_version = version
@@ -86,9 +88,13 @@ class CursesInterface():
         self.screen.addstr(12, 41, "NOTE: If no value is entered,")
         self.screen.addstr(13, 41, "the default will be selected")
 
-        # Create a sub window for the options list
+        # Create a sub window that will contain the options list
         self.option_box = box_generator('options', 20, 36, 2, 0)
         self.option_box.scrollok(True)
+
+        # Create a pad window for the actual options list
+        self.option_pad = curses.newpad(self.options_avail + 4, 36)
+        #self.option_pad.box()
 
         # Create a sub window for package information
         self.pack_info_box = box_generator('package info', 9, 44, 2, 36)
@@ -104,13 +110,12 @@ class CursesInterface():
 
         # Create a sub window for option information
         self.opt_info_box = box_generator('option info', 11, 44, 11, 36)
-        self.opt_info_box.addstr(2, 2, "# of options: ", curses.A_BOLD)
-        self.opt_info_box.addstr(2, 16, str(len(self.option_dict)))
-        self.opt_info_box.addstr(3, 2, "Option index:", curses.A_BOLD)
-        self.opt_info_box.addstr(4, 2, "Flag:", curses.A_BOLD)
-        self.opt_info_box.addstr(5, 2, "Help Message:", curses.A_BOLD)
+        self.opt_info_box.addstr(2, 2, "Option index:", curses.A_BOLD)
+        self.opt_info_box.addstr(3, 2, "Flag:", curses.A_BOLD)
+        self.opt_info_box.addstr(4, 2, "Help Message:", curses.A_BOLD)
         # Print a little help message
-        self.screen.addstr(22, 10, "Hit 'enter' to select items, 'q' to quit or 'e' to execute")
+        self.screen.addstr(22, 10,
+                           "Hit 'enter' to select items, 'q' to quit or 'e' to execute")
 
     def refresh_options(self):
 
@@ -119,14 +124,16 @@ class CursesInterface():
         True or False.
         """
 
-        offset_y = 2
+        offset_y = 0
         # For each item, print an X or not depending on the current state
-        for item in self.option_list[:16]:
+        for item in self.option_list:
             if self.toggle_dict[item]:
-                self.option_box.addstr(offset_y, 2, "[X] %s" % item)
+                self.option_pad.addstr(offset_y, 0, "[X] %s" % item)
             else:
-                self.option_box.addstr(offset_y, 2, "[ ] %s" % item)
+                self.option_pad.addstr(offset_y, 0, "[ ] %s" % item)
             offset_y += 1
+
+        self.option_box.refresh()
 
     def refresh_option_info_box(self, index):
 
@@ -140,25 +147,28 @@ class CursesInterface():
 
         current_item = self.option_list[index]
 
-        message_height = 6
         # Overwrite old info with spaces
-        self.opt_info_box.addstr(3, 16, '  ')
-        self.opt_info_box.addstr(4, 8, ' ' * 35)
+        self.opt_info_box.addstr(2, 16, ' ' * 5)
+        self.opt_info_box.addstr(3, 8, ' ' * 35)
 
-        for line_y in [6, 7, 8]:
-            self.opt_info_box.addstr(line_y, 2, ' ' * 36)
+        for line_y in [5, 6, 7, 8]:
+            self.opt_info_box.addstr(line_y, 2, ' ' * 40)
+
         # Gather and print out new information
         option_flag, original_help_message = self.option_dict[current_item]
-        #option_flag = ''
-        #original_help_message = self.option_dict[current_item]
-        wrapped_help_message = line_wrapper(original_help_message, 36)
+        wrapped_help_message = line_wrapper(original_help_message, 40)
 
-        self.opt_info_box.addstr(3, 16, "%i" % index)
-        self.opt_info_box.addstr(4, 8, option_flag)
+        pretty_index = str(index + 1).zfill(2)
+        self.opt_info_box.addstr(2, 16,
+                                 "%s/%i" % (pretty_index, self.options_avail))
+        self.opt_info_box.addstr(3, 8, option_flag)
 
+        message_height = 5
         for a_line in wrapped_help_message:
             self.opt_info_box.addstr(message_height, 2, str(a_line))
             message_height += 1
+
+        self.opt_info_box.refresh()
 
     def refresh_main_screen(self):
 
@@ -215,53 +225,96 @@ class CursesInterface():
 
         output_folder = "%s-%s" % (self.package_name, self.package_version)
         self.pack_info_box.addstr(5, 11, output_folder)
+
+        if self.options_avail > 15:
+            self.option_box.addstr(18, 13, "▼ More ▼", curses.A_BOLD)
         # Add some more lines to the package info box
         self.refresh_option_info_box(0)
 
         self.refresh_main_screen()
+        self.option_pad.refresh(0, 0, 4, 2, 19, 32)
         # Move the cursor to the start of the options list
         self.screen.move(4, 3)
 
         key = ''
         exit_interface = True
+
+        pad_offset = 0
+        window_offset = 4
+        index_offset = window_offset + pad_offset
+        maximum_offset = self.options_avail - 16
+        maximum_y = self.options_avail + 3
         # Read incoming keypresses until quit or execute
         while exit_interface:
 
             key = self.screen.getch()
             current_y, current_x = self.screen.getyx()
-            current_index = current_y - 4
+            current_index = current_y - index_offset
+
             # When 'q'  or 'e' is pressed, close window
-            if key == ord('q') or key == ord('e'):
+            if key in [ord('e'), ord('q')]:
                 exit_interface = False
+
             # When the up arrow is pressed, reduce y-value to move cursor up
             elif key == curses.KEY_UP:
-                if current_y > 4:
+                if current_y == 4 and pad_offset > 0:
+                    pad_offset -= 1
+                elif current_y > 4:
                     current_y -= 1
-                    current_index -= 1
+
             #  When the down arrow is pressed, increase y-value to move cursor
             # down
             elif key == curses.KEY_DOWN:
-                if current_y < 3 + len(self.option_list) and current_y < 19:
+                if current_y == 19 and pad_offset < maximum_offset:
+                    pad_offset += 1
+                elif current_y < 19 and current_y < maximum_y:
                     current_y += 1
-                    current_index += 1
+            # When 'HOME' is pressed, scroll to top of list
+            elif key == curses.KEY_HOME:
+                current_y = 4
+                pad_offset = 0
+            # When 'END' is pressed, scroll to bottom of list
+            elif key == curses.KEY_END:
+                if self.options_avail > 15:
+                    current_y = 19
+                    pad_offset = maximum_offset
+                else:
+                    current_y = self.options_avail + 3
+
+
+            current_index = current_y + pad_offset - window_offset
+
             #  If 'enter' is pressed, add an X to the option by altering a
             # dictionary and refreshing the interface
-            elif key == ord('\n'):
+            if key == ord('\n'):
                 current_item = self.option_list[current_index]
                 new_value = not self.toggle_dict[current_item]
                 self.toggle_dict[current_item] = new_value
 
                 self.refresh_options()
-                self.option_box.refresh()
 
+            self.option_pad.refresh(pad_offset, 0, 4, 2, 19, 34)
+
+            # Special chars: ▲ ▼ ↑ ↓
+
+            if pad_offset > 0:
+                self.option_box.addstr(1, 13, "↑ More ↑", curses.A_BOLD)
+            else:
+                self.option_box.addstr(1, 13, ' ' * 8)
+
+            if pad_offset < maximum_offset:
+                self.option_box.addstr(18, 13, "▼ More ▼", curses.A_BOLD)
+            else:
+                self.option_box.addstr(18, 13, ' ' * 8)
+
+            self.option_box.refresh()
             self.refresh_option_info_box(current_index)
-            self.opt_info_box.refresh()
 
             self.screen.move(current_y, current_x)
             self.screen.refresh()
 
         curses.endwin()
-        # Following a quit or execute, do some things
+        # Following a quit or execute, return a value
         if key == ord('q'):
             print("Tadman build canceled")
             return False
@@ -270,17 +323,39 @@ class CursesInterface():
 
 
 if __name__ == '__main__':
-    IN_LIST = [('Enable verbose build', ['--enable-verbose',
-                                         'Output extra info while configuring']),
-               ('Enable unicode support', ['--enable-unicode',
-                                           'UTF-8 is the true master race!']),
-               ('Disable squid mode', ['--disable-squid', 'What does this do?']),
-               ('Disable colored output', ['--disable-color',
-                                           'Disable color for those that are colorblind']),
-               ('Use old legacy driver', ['--enable-legacy-driver',
-                                          'For lovers of classic Linux 2.4'])]
-    ORD_DICT = collections.OrderedDict(IN_LIST)
-    N_INTERFACE = CursesInterface(ORD_DICT, 'squid', '1.4.18', 'autotools')
+    S_DICT = {'Enable verbose build': ['--enable-verbose', 'Output extra info while configuring'],
+              'Enable unicode support': ['--enable-unicode', 'UTF-8 is the true master race!'],
+              'Disable squid mode': ['--disable-squid', 'What does this do?'],
+              'Disable colored output': ['--disable-color', 'Disable color for those that are colorblind'],
+              'Use old legacy driver': ['--enable-legacy-driver', 'For lovers of classic Linux 2.4']
+            }
+    L_DICT = {'Enable verbose build': ['--enable-verbose', 'Output extra info while configuring'],
+              'Enable unicode support': ['--enable-unicode', 'UTF-8 is the true master race!'],
+              'Disable squid mode': ['--disable-squid', 'What does this do?'],
+              'Disable colored output': ['--disable-color', 'Disable color for those that are colorblind'],
+              'Use old legacy driver': ['--enable-legacy-driver', 'For lovers of classic Linux 2.4'],
+              'Disable Option Checking': ['--disable-option-checking', 'Ignore unrecognized --enable/--with options'],
+              'Disable Feature': ['--disable-FEATURE', 'Do not include feature (same as --enable-feature=no)'],
+              'Enable Feature[=Arg]': ['--enable-FEATURE[=ARG]', 'Include feature [arg=yes]'],
+              'Enable Silent Rules': ['--enable-silent-rules', "Less verbose build output (undo: `make v=1')"],
+              'Disable Silent Rules': ['--disable-silent-rules', "Verbose build output (undo: `make v=0')"],
+              'Enable Strict Ansi': ['--enable-strict-ansi', 'Enable strict ansi compliance build [[default=no]]'],
+              'Enable Super Warnings': ['--enable-super-warnings', 'Enable extra compiler warnings [[default=no]]'],
+              'Enable Debug': ['--enable-debug', 'Build a debug version [[default=no]]'],
+              'Enable Gprof': ['--enable-gprof', 'Enable gprof profiling output [[default=no]]'],
+              'Enable Gprof Libc': ['--enable-gprof-libc', 'Link against libc with profiling support [[default=no]]'],
+              'Enable Dependency Tracking': ['--enable-dependency-tracking', 'Do not reject slow dependency extractors'],
+              'Enable Shared[=Pkgs]': ['--enable-shared[=PKGS]', 'Build shared libraries [default=yes]'],
+              'Enable Static[=Pkgs]': ['--enable-static[=PKGS]', 'Build static libraries [default=yes]'],
+              'Enable Fast Install[=Pkgs]': ['--enable-fast-install[=PKGS]', 'Optimize for fast installation [default=yes]'],
+              'Disable Nls': ['--disable-nls', 'Do not use native language support'],
+              'Disable Rpath': ['--disable-rpath', 'Do not hardcode runtime library paths'],
+              'Disable Startup Notification': ['--disable-startup-notification', 'Disable the startup notification library. [default=enabled]'],
+              'Disable Xcursor': ['--disable-xcursor', 'Disable use of the x cursor library. [default=enabled]'],
+              'Disable Xkb': ['--disable-xkb', 'Build without support for xkb extension [default=enabled]'],
+              'Disable Xsync': ['--disable-xsync', 'Build without support for xsync extension [default=enabled]']
+             }
+
+    N_INTERFACE = MainInterface(L_DICT, 'squid', '1.4.18', 'autotools')
     if N_INTERFACE.main_loop():
-        print(N_INTERFACE.get_option_values())
-        print(N_INTERFACE.get_entry_values())
+        print(N_INTERFACE.get_return_values())

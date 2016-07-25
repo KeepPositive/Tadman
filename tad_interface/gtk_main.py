@@ -9,9 +9,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 import gi.repository.Gtk as Gtk
 
-
-
-class GtkInterface(Gtk.Window):
+class MainInterface(Gtk.Window):
 
     """ This class is in charge of managing the GTK+ 3.0 based GUI for Tadman.
     It currently consists of two main parts: the options list with toggles on
@@ -163,7 +161,7 @@ class GtkInterface(Gtk.Window):
 
         Gtk.main_quit()
 
-    def get_info(self):
+    def get_return_values(self):
 
         return self.info_list
 
@@ -172,13 +170,13 @@ def gui_main(mode, pack_name, pack_version, a_list):
 
     """ A main function to run the entire GUI. Nothing all that special."""
 
-    window = GtkInterface(mode, pack_name, pack_version, a_list)
+    window = MainInterface(mode, pack_name, pack_version, a_list)
     window.show_all()
     Gtk.main()
 
     window.hide()
 
-    return window.get_info()
+    return window.get_return_info()
 
 
 if __name__ == '__main__':
