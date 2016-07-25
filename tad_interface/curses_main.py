@@ -21,6 +21,15 @@ def box_generator(title, box_y, box_x, displace_y, displace_x):
 
 def line_wrapper(a_string, length):
 
+    """ This function is responsible for 'wrapping' long strings. This
+    is achieved by setting a desire length, and then finding the space
+    character nearest to said length. Strings of the desire length are
+    then added to a dictionary.
+
+    The return value of this function is a list containing multiple
+    strings.
+    """
+
     string_list = [a_string]
     count = 0
 
@@ -54,13 +63,13 @@ class CursesInterface():
 
     def __init__(self, a_dict, name, version, build_system):
 
-        self.original_dict = a_dict
+        self.option_dict = a_dict
         self.option_list = []
-        self.option_dict = {}
+        self.toggle_dict = {}
 
-        for item in self.original_dict:
+        for item in self.option_dict:
             self.option_list.append(item)
-            self.option_dict[item] = False
+            self.toggle_dict[item] = False
 
         self.package_name = name
         self.package_version = version
@@ -71,15 +80,18 @@ class CursesInterface():
         curses.echo()
         curses.cbreak()
         self.screen.keypad(1)
+        # Add a title to the main screen
         self.screen.addstr(0, 1, "Tadman Package Manager", curses.A_UNDERLINE)
+        # Add a small help message that will be covered up later
         self.screen.addstr(12, 41, "NOTE: If no value is entered,")
         self.screen.addstr(13, 41, "the default will be selected")
-        self.screen.refresh()
+
         # Create a sub window for the options list
-        self.option_box = box_generator('options', 20, 36, 2, 1)
+        self.option_box = box_generator('options', 20, 36, 2, 0)
         self.option_box.scrollok(True)
+
         # Create a sub window for package information
-        self.pack_info_box = box_generator('package info', 9, 40, 2, 37)
+        self.pack_info_box = box_generator('package info', 9, 44, 2, 36)
         # Add some title lines
         self.pack_info_box.addstr(2, 2, "Package:", curses.A_BOLD)
         self.pack_info_box.addstr(3, 2, "Version:", curses.A_BOLD)
@@ -89,10 +101,13 @@ class CursesInterface():
         # Display available values along with titles
         self.pack_info_box.addstr(4, 11, '/usr/local/tadman')
         self.pack_info_box.addstr(6, 11, self.build_type)
+
         # Create a sub window for option information
-        self.opt_info_box = box_generator('option info', 11, 40, 11, 37)
+        self.opt_info_box = box_generator('option info', 11, 44, 11, 36)
         self.opt_info_box.addstr(2, 2, "# of options: ", curses.A_BOLD)
-        self.opt_info_box.addstr(2, 16, str(len(self.option_list)))
+        self.opt_info_box.addstr(2, 16, str(len(self.option_dict)))
+        self.opt_info_box.addstr(3, 2, "Option index:", curses.A_BOLD)
+        self.opt_info_box.addstr(4, 2, "Flag:", curses.A_BOLD)
         self.opt_info_box.addstr(5, 2, "Help Message:", curses.A_BOLD)
         # Print a little help message
         self.screen.addstr(22, 10, "Hit 'enter' to select items, 'q' to quit or 'e' to execute")
@@ -106,12 +121,44 @@ class CursesInterface():
 
         offset_y = 2
         # For each item, print an X or not depending on the current state
-        for item in self.option_list:
-            if self.option_dict[item]:
+        for item in self.option_list[:16]:
+            if self.toggle_dict[item]:
                 self.option_box.addstr(offset_y, 2, "[X] %s" % item)
             else:
                 self.option_box.addstr(offset_y, 2, "[ ] %s" % item)
             offset_y += 1
+
+    def refresh_option_info_box(self, index):
+
+        """ While moving the cursor up and down within the interface,
+        the option info box must be updated with information pertinent
+        to the highlighted item. In order to keep these all in track
+        and make the main_loop function slightly cleaner, this function
+        updates the information by itself. Prior to writing, it also
+        overwrites old info with whitespace.
+        """
+
+        current_item = self.option_list[index]
+
+        message_height = 6
+        # Overwrite old info with spaces
+        self.opt_info_box.addstr(3, 16, '  ')
+        self.opt_info_box.addstr(4, 8, ' ' * 35)
+
+        for line_y in [6, 7, 8]:
+            self.opt_info_box.addstr(line_y, 2, ' ' * 36)
+        # Gather and print out new information
+        option_flag, original_help_message = self.option_dict[current_item]
+        #option_flag = ''
+        #original_help_message = self.option_dict[current_item]
+        wrapped_help_message = line_wrapper(original_help_message, 36)
+
+        self.opt_info_box.addstr(3, 16, "%i" % index)
+        self.opt_info_box.addstr(4, 8, option_flag)
+
+        for a_line in wrapped_help_message:
+            self.opt_info_box.addstr(message_height, 2, str(a_line))
+            message_height += 1
 
     def refresh_main_screen(self):
 
@@ -125,50 +172,25 @@ class CursesInterface():
         self.pack_info_box.refresh()
         self.opt_info_box.refresh()
 
-    def get_selected_item(self, a_box):
-
-        """ This function uses the current y-coordinate of the cursor
-        to decide which item from the options list is selected.
-        """
-        # We do not need the x value, so a underscore is passed
-        current_y, _ = a_box.getyx()
-        #  Find the index by subtracting the height of the start of
-        # the list, and the top of the window
-        item_index = current_y - 4
-        current_item = self.option_list[item_index]
-
-        return current_item
-
-    def get_option_values(self):
-
-        """ This function returns the indices of the options selected
-        using the interface, and returns them as a list.
-        """
+    def get_return_values(self):
 
         return_list = []
 
-        for item in self.option_dict:
-            if self.option_dict[item]:
-                return_list.append(self.option_list.index(item))
-        # Return a version of the list that is sorted by value
-        return sorted(return_list, key=int)
-
-    def get_entry_values(self):
-
-        """ This function returns a list of values entered by the
-        user, specifically the package name and version which are
-        entered at the beginning of the build.
-        """
-
-        returns = []
-
         for string in [self.package_name, self.package_version]:
             if isinstance(string, bytes):
-                returns.append(string.decode('utf-8'))
+                return_list.append(string.decode('utf-8'))
             else:
-                returns.append(string)
+                return_list.append(string)
 
-        return returns
+        index_list = []
+
+        for item in self.toggle_dict:
+            if self.toggle_dict[item]:
+                index_list.append(self.option_list.index(item))
+
+        return_list.append(sorted(index_list, key=int))
+        # Return a version of the list that is sorted by value
+        return return_list
 
     def main_loop(self):
 
@@ -176,82 +198,68 @@ class CursesInterface():
         a large majority of the user input.
         """
 
+        self.screen.refresh()
         pack_name = self.pack_info_box.getstr(2, 11, 27)[:26]
         pack_version = self.pack_info_box.getstr(3, 11, 27)[:26]
-
+        # Disable the users ability to type freely
         curses.noecho()
         # If the line is left empty, display the default value
-        if pack_name.decode('utf-8') == '':
-            self.pack_info_box.addstr(2, 11, self.package_name)
-        else:
-            self.pack_info_box.addstr(2, 11, pack_name)
+        if pack_name.decode('utf-8') != '':
             self.package_name = pack_name.decode('utf-8')
 
-        if pack_version.decode('utf-8') == '':
-            self.pack_info_box.addstr(3, 11, self.package_version)
-        else:
-            self.pack_info_box.addstr(3, 11, pack_version)
+        if pack_version.decode('utf-8') != '':
             self.package_version = pack_version.decode('utf-8')
+
+        self.pack_info_box.addstr(2, 11, self.package_name)
+        self.pack_info_box.addstr(3, 11, self.package_version)
 
         output_folder = "%s-%s" % (self.package_name, self.package_version)
         self.pack_info_box.addstr(5, 11, output_folder)
         # Add some more lines to the package info box
-        self.opt_info_box.addstr(3, 2, "Option index: 0")
-        self.opt_info_box.addstr(6, 2, self.original_dict[self.option_list[0]])
+        self.refresh_option_info_box(0)
 
         self.refresh_main_screen()
         # Move the cursor to the start of the options list
-        self.screen.move(4, 4)
+        self.screen.move(4, 3)
 
         key = ''
         exit_interface = True
-        # Read incoming keypresses until quit pr execute
+        # Read incoming keypresses until quit or execute
         while exit_interface:
-            for x in [6, 7, 8]:
-                self.opt_info_box.addstr(x, 2, ' ' * 36)
 
             key = self.screen.getch()
             current_y, current_x = self.screen.getyx()
             current_index = current_y - 4
-            if key == ord('q'):
+            # When 'q'  or 'e' is pressed, close window
+            if key == ord('q') or key == ord('e'):
                 exit_interface = False
-
-            elif key == ord('e'):
-                exit_interface = False
-
+            # When the up arrow is pressed, reduce y-value to move cursor up
             elif key == curses.KEY_UP:
                 if current_y > 4:
                     current_y -= 1
                     current_index -= 1
-
+            #  When the down arrow is pressed, increase y-value to move cursor
+            # down
             elif key == curses.KEY_DOWN:
-                if current_y < 3 + len(self.option_list):
+                if current_y < 3 + len(self.option_list) and current_y < 19:
                     current_y += 1
                     current_index += 1
-
+            #  If 'enter' is pressed, add an X to the option by altering a
+            # dictionary and refreshing the interface
             elif key == ord('\n'):
-                current_item = self.get_selected_item(self.screen)
-                new_value = not self.option_dict[current_item]
-                self.option_dict[current_item] = new_value
+                current_item = self.option_list[current_index]
+                new_value = not self.toggle_dict[current_item]
+                self.toggle_dict[current_item] = new_value
 
                 self.refresh_options()
                 self.option_box.refresh()
 
-
-            self.opt_info_box.addstr(3, 2, "Option index: %i" % current_index)
-
-            help_message = line_wrapper(self.original_dict[self.option_list[current_index]],
-                                        36)
-            message_height = 6
-            for line in help_message:
-                self.opt_info_box.addstr(message_height, 2, line)
-                message_height += 1
-
+            self.refresh_option_info_box(current_index)
             self.opt_info_box.refresh()
+
             self.screen.move(current_y, current_x)
             self.screen.refresh()
 
-        self.screen.clear()
         curses.endwin()
         # Following a quit or execute, do some things
         if key == ord('q'):

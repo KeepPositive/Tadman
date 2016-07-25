@@ -87,10 +87,10 @@ def autotool_new_processor(a_list):
     uses all the functions above in a kinda smart way to clean up all of
     the lines from autotools_config_write.
 
-    This function returns a processed list of lists containing options in the
+    This function returns a processed dictionary containing options in the
     format of:
 
-        [title, cli_option, help_message]
+        title: [cli_option, help_message]
 
     """
 
@@ -168,7 +168,9 @@ def autotool_newer_processor(a_list):
     for item in filtered_list:
         if isinstance(item, list):
             title = option_to_title(item[0])
-            output_dict[title] = item
+            opt_flag = item[0]
+            help_message = item[1].capitalize()
+            output_dict[title] = [opt_flag, help_message]
         else:
             filtered_list.remove(item)
 

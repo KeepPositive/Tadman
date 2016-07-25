@@ -1,16 +1,17 @@
-""" Welcome to the first (And only) GUI interface for the Tadman package
+""" Welcome to the GTK+3 GUI interface for the Tadman package
 manager! I'm really proud with how this is all turning out. But there
 are a few tidbits I would like to improve still, like searching, and adding
 values to options with an equals at the end.
 """
-### Standard
-## N/A
-### Dependencies
+
+## Dependencies
 import gi
 gi.require_version('Gtk', '3.0')
 import gi.repository.Gtk as Gtk
 
-class TadmanGtkGui(Gtk.Window):
+
+
+class GtkInterface(Gtk.Window):
 
     """ This class is in charge of managing the GTK+ 3.0 based GUI for Tadman.
     It currently consists of two main parts: the options list with toggles on
@@ -19,17 +20,21 @@ class TadmanGtkGui(Gtk.Window):
     being used.
     """
 
-    def __init__(self, mode, pack_name, pack_version, in_list):
+    def __init__(self, in_dict, pack_name, pack_version, mode):
 
         """ Initialize all of the internal and external parts of the GUI. """
 
         self.mode = mode
-        self.options_list = in_list
+        self.options_dict = in_dict
+        self.options_list = []
+        for item in self.options_dict:
+            self.options_list.append(item)
+
         self.toggle_list = []
         self.info_list = []
 
-        list_length = len(in_list)
-        self.list_range = range(list_length)
+        dict_length = len(in_dict)
+        self.list_range = range(dict_length)
         # Initialize GTK window and set a title
         Gtk.Window.__init__(self, title='Tadman Package Manager')
         # Set the perfect window dimensions, and make it non-resizable
@@ -57,9 +62,9 @@ class TadmanGtkGui(Gtk.Window):
         #search_bar = Gtk.Entry()
         cell = Gtk.CellRendererText()
         toggle = Gtk.CellRendererToggle()
-        for index in self.list_range:
+        for title in self.options_dict:
             # Add a line to the list_store for each option
-            self.list_model.append([self.options_list[index][0], False])
+            self.list_model.append([title, False])
 
         # Configure container(s)
         scrolly.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -100,7 +105,8 @@ class TadmanGtkGui(Gtk.Window):
         scrolly.add(self.tree_view)
         right_box.pack_start(self.package_name, False, False, 1)
         right_box.pack_start(self.package_version, False, False, 1)
-        right_box.pack_start(Gtk.Label("Number of options: %d" % list_length), False, False, 1)
+        right_box.pack_start(Gtk.Label("Number of options: %d" % dict_length),
+                             False, False, 1)
         right_box.pack_start(self.help_message, False, False, 10)
 
     def cell_was_toggled(self, widget, path):
@@ -109,11 +115,9 @@ class TadmanGtkGui(Gtk.Window):
 
         self.list_model[path][1] = not self.list_model[path][1]
 
-        option = self.options_list[int(path)][1]
+        option = int(path)
         # If this is a CMake build, then the option must have 'ON' appened to
         # the end of it
-        if self.mode == 'cmake':
-            option = "%s%s" % (option, 'ON')
 
         if self.list_model[path][1]:
             self.toggle_list.append(option)
@@ -132,22 +136,22 @@ class TadmanGtkGui(Gtk.Window):
         if not treeiter is None:
             # It must loop through all of the entries in order to set the help
             # message, which I'm not very pleased with
-            for index in self.list_range:
-                if model[treeiter][0] in self.options_list[index]:
-                    self.help_message.set_text(self.options_list[index][2])
+            if model[treeiter][0] in self.options_dict:
+                item = model[treeiter][0]
+                self.help_message.set_text(self.options_dict[item][1])
 
     def run_was_pressed(self, widget):
 
-        """ When the run button is hit, the current options in the name entry 
-        box and the toggle options selected are saved to a list, and the GUI 
+        """ When the run button is hit, the current options in the name entry
+        box and the toggle options selected are saved to a list, and the GUI
         closes.
         """
         Gtk.main_quit()
 
         self.info_list.append(self.package_name.get_text())
         self.info_list.append(self.package_version.get_text())
-        self.info_list.append(self.toggle_list)
-
+        #self.info_list.append(self.toggle_list)
+        self.info_list.append(sorted(self.toggle_list, key=int))
 
     def cancel_was_pressed(self, widget):
 
@@ -168,7 +172,7 @@ def gui_main(mode, pack_name, pack_version, a_list):
 
     """ A main function to run the entire GUI. Nothing all that special."""
 
-    window = TadmanGtkGui(mode, pack_name, pack_version, a_list)
+    window = GtkInterface(mode, pack_name, pack_version, a_list)
     window.show_all()
     Gtk.main()
 
@@ -181,4 +185,4 @@ if __name__ == '__main__':
     # For testing purposes ;)
     OPTIONS = [['YOOO', '--enable-yo', "Enable native slang support in browser"],
                ['Squiddy', '--disable-squid', "Disable the standard Squiddy theme"]]
-    GUI = gui_main('autotools', '/os/root/ted_test-3.2.1', OPTIONS)
+    GUI = gui_main('autotools', 'ted_test', '3.2.1', OPTIONS)

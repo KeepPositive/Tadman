@@ -1,4 +1,7 @@
 #! /usr/bin/python3
+
+""" This is the main script for the Tadman Package Manager.
+"""
 ## Standard
 import os
 import subprocess
@@ -17,48 +20,55 @@ import tad_tools.symbolic_linker as sym_linker
 import tad_tools.path_tools as path_tools
 import tad_tools.logger as log
 
-def find_build_type(a_path):
-    # Where the file with all options should be output to
-    config_out_file_path = "%s/config_out.txt" % a_path
+def get_autotools_options(a_path):
+    build_type = 'autotools'
 
-    if os.path.isfile("%s/configure" % a_path):
-
-        build_type = 'autotools'
-
-        if os.path.isfile(config_out_file_path):
-            print("Previous config_out.txt found!")
-        else:
-            awrite.write_config_txt(a_path)
-
-        raw_options_list = aread.make_options_list(config_out_file_path)
-        filtered_options_list = aproc.autotool_new_processor(raw_options_list)
-
-    elif os.path.isfile("%s/CMakeLists.txt" % a_path):
-
-        build_type = 'cmake'
-
-        print("WARNING: Program dependencies required prior to config!",
-              file=sys.stderr)
-
-        if os.path.isfile(config_out_file_path):
-            print("Previous config_out.txt found!")
-        else:
-            cwrite.write_config_txt(a_path)
-
-        raw_options_list = cread.make_options_list(config_out_file_path)
-        filtered_options_list = cproc.cmake_processor(raw_options_list)
-
-    elif os.path.isfile("%s/autogen.sh" % a_path):
-
-        build_type = 'autotools'
-
-        os.chdir(a_path)
-        subprocess.run(['./autogen.sh'])
+    if os.path.isfile(config_out_file_path):
+        print("Previous config_out.txt found!")
+    else:
         awrite.write_config_txt(a_path)
-        raw_options_list = aread.make_options_list(config_out_file_path)
-        filtered_options_list = aproc.autotool_new_processor(raw_options_list)
+
+    raw_options_list = aread.make_options_list(config_out_file_path)
+    filtered_options_list = aproc.autotool_new_processor(raw_options_list)
 
     return build_type, filtered_options_list
+
+def get_cmake_options(a_path):
+    build_type = 'cmake'
+    config_out_file_path = "%s/config_out.txt" % a_path
+    print("WARNING: Program dependencies required prior to config!",
+          file=sys.stderr)
+
+    if os.path.isfile(config_out_file_path):
+        print("Previous config_out.txt found!")
+    else:
+        cwrite.write_config_txt(a_path)
+
+    raw_options_list = cread.make_options_list(config_out_file_path)
+    filtered_options_list = cproc.cmake_processor(raw_options_list)
+
+    return build_type, filtered_options_list
+
+def get_autogen_options(a_path):
+    build_type = 'autotools'
+
+    os.chdir(a_path)
+    subprocess.run(['./autogen.sh'])
+    awrite.write_config_txt(a_path)
+    raw_options_list = aread.make_options_list(config_out_file_path)
+    filtered_options_list = aproc.autotool_new_processor(raw_options_list)
+
+    return build_type, filtered_options_list
+
+def find_build_type(a_path):
+    if os.path.isfile("%s/configure" % a_path):
+        option_list = get_autotools_options(a_path)
+    elif os.path.isfile("%s/CMakeLists.txt" % a_path):
+        option_list = get_cmake_options(a_path)
+    elif os.path.isfile("%s/autogen.sh" % a_path):
+        option_list = get_autogen_options(a_path)
+
+    return option_list
 
 def configure_package(a_path):
 
@@ -89,7 +99,7 @@ def build_package(in_path, out_path, config_options):
     # Configure the sources
     subprocess.run(config_options)
     # Build the sources
-    subprocess.run(['make', '-j', '9'])
+    subprocess.run(['make', '-j', '4'])
     # Install it in the Tadman directory
     subprocess.run(['make', "DESTDIR=%s" % out_path, 'install'])
 
@@ -128,7 +138,7 @@ try:
         build_package(pack_path, pack_dest, config_list)
         log.build_logger(pack_dest)
 
-        if tad_install.gui_main(updated_title):
+        if tad_install.gui_main(package_title):
             install_package(pack_path)
 
     elif argument == 'install':
