@@ -13,8 +13,9 @@ import tad_autotools.writer as awrite
 import tad_cmake.processor as cproc
 import tad_cmake.reader as cread
 import tad_cmake.writer as cwrite
-import tad_interface.gtk_main as tad_build
-import tad_interface.gtk_install as tad_install
+import tad_interface.curses_main
+#import tad_interface.gtk_main as tad_build
+#import tad_interface.gtk_install as tad_install
 import tad_tools.config_build as config_build
 import tad_tools.symbolic_linker as sym_linker
 import tad_tools.path_tools as path_tools
@@ -72,23 +73,33 @@ def find_build_type(a_path):
 
     return option_list
 
+def simple_prompt():
+    choice = input("Would you like to install the package? [y,N] ")
+
+    if choice in ['n', 'N', '']:
+        return False
+    elif choice in ['y', 'Y']:
+        return True
+
 def configure_package(a_path):
 
     package_name, package_version = path_tools.name_version_split(a_path)
     package_title = "%s-%s" % (package_name, package_version)
 
     build_type, options_list = find_build_type(a_path)
-    interface = tad_build.MainInterface(options_list, package_name,
-                                        package_version, build_type)
-    interface.show_all()
-    Gtk.main()
+    interface = tad_interface.curses_main.MainInterface(options_list,
+                                                        package_name,
+                                                        package_version,
+                                                        build_type)
+    interface.init_option_loop()
 
-    return_values = interface.get_return_values()
-    package_name = return_values[0]
-    package_version = return_values[1]
-    selected_options = return_values[2]
-    if selected_options == []:
-        print("Tadman exited.")
+    if interface.run_option_loop():
+        return_values = interface.get_return_values()
+        package_name = return_values[0]
+        package_version = return_values[1]
+        selected_options = return_values[2]
+    else:
+        print("Tadman build was canceled")
         sys.exit(0)
 
     # Create list of the configuration options which can be used by subprocess
@@ -96,8 +107,7 @@ def configure_package(a_path):
                                                  selected_options,
                                                  build_type)
     package_destination = "%s/%s" % ("/usr/local/tadman",
-                                     "%s-%s" % (package_name, package_version)
-
+                                     "%s-%s" % (package_name, package_version))
     return configuration, package_destination
 
 def build_package(in_path, out_path, config_options):
@@ -146,14 +156,13 @@ try:
         build_package(pack_path, pack_dest, config_list)
         log.build_logger(pack_dest)
 
-        if tad_install.gui_main(pack_path):
+        if simple_prompt():
             install_package(pack_path)
 
     elif argument == 'install':
         install_package(pack_path)
 
     elif argument == 'uninstall':
-        print("Uninstalling")
         sym_linker.sym_reap(pack_path)
         log.install_logger(pack_path, 'Uninstall')
 
@@ -164,7 +173,7 @@ try:
 except IndexError:
     try:
         if sys.argv[1] == 'version':
-            print('Tadman 0.0.3')
+            print('Tadman 0.1.0')
         else:
             raise IndexError
     except IndexError:

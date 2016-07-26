@@ -19,7 +19,7 @@ setuptools.setup(
     # Package info
     name='tadman',
     description="Some package manager written in Python",
-    version = "0.0.3",
+    version = "0.1.0",
     # Author and Project info
     author = "Ted Moseley",
     author_email = "tmoseley1106@gmail.com",
@@ -35,14 +35,14 @@ setuptools.setup(
 
 
 # Documentation related stuff
-try:
 
-    input_file = "%s/docs/tadman.man.adoc" % os.getcwd()
-    output_file = "/usr/share/man/man8/tadman.8"
+input_file = "%s/docs/tadman.man.adoc" % os.getcwd()
+output_file = "/usr/share/man/man8/tadman.8"
 
-    adoc = which('asciidoctor')
+adoc = which('asciidoctor')
 
-    subprocess.call([adoc, "--backend", "manpage", "--doctype", "manpage",
+subprocess.call([adoc, "--backend", "manpage", "--doctype", "manpage",
                      "--out-file", output_file, input_file])
 
-    print("Tadman manpage installed at %s" % output_file)
+print("Tadman manpage installed at %s" % output_file)
+

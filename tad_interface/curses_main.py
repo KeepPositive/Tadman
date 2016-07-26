@@ -3,7 +3,6 @@ the functionality of the GTK+ version, but use very few dependencies
 and be accessible from a terminal interface.
 """
 # Standard
-import collections
 import curses
 
 def box_generator(title, box_y, box_x, displace_y, displace_x):
@@ -61,7 +60,7 @@ class MainInterface():
     functionality.
     """
 
-    def __init__(self, a_dict, name, version, build_system):
+    def __init__(self, a_dict, name, version, build_type):
 
         self.option_dict = a_dict
         self.option_list = []
@@ -75,26 +74,27 @@ class MainInterface():
 
         self.package_name = name
         self.package_version = version
-        self.build_type = build_system
+        self.build_type = build_type
 
-        # Initialize the main screen
+        # Initialize and prepare the main screen
         self.screen = curses.initscr()
         curses.echo()
         curses.cbreak()
         self.screen.keypad(1)
         # Add a title to the main screen
         self.screen.addstr(0, 1, "Tadman Package Manager", curses.A_UNDERLINE)
+        # Print a little help message
+        self.screen.addstr(22, 10,
+                           "Hit 'enter' to select items, 'q' to quit or 'e' to execute")
         # Add a small help message that will be covered up later
         self.screen.addstr(12, 41, "NOTE: If no value is entered,")
         self.screen.addstr(13, 41, "the default will be selected")
 
+        # Start initializing subwindows
         # Create a sub window that will contain the options list
         self.option_box = box_generator('options', 20, 36, 2, 0)
-        self.option_box.scrollok(True)
-
         # Create a pad window for the actual options list
         self.option_pad = curses.newpad(self.options_avail + 4, 36)
-        #self.option_pad.box()
 
         # Create a sub window for package information
         self.pack_info_box = box_generator('package info', 9, 44, 2, 36)
@@ -104,20 +104,34 @@ class MainInterface():
         self.pack_info_box.addstr(4, 2, 'DestDir:', curses.A_BOLD)
         self.pack_info_box.addstr(5, 2, 'FldName:', curses.A_BOLD)
         self.pack_info_box.addstr(6, 2, 'BldType:', curses.A_BOLD)
-        # Display available values along with titles
-        self.pack_info_box.addstr(4, 11, '/usr/local/tadman')
-        self.pack_info_box.addstr(6, 11, self.build_type)
 
         # Create a sub window for option information
         self.opt_info_box = box_generator('option info', 11, 44, 11, 36)
-        self.opt_info_box.addstr(2, 2, "Option index:", curses.A_BOLD)
-        self.opt_info_box.addstr(3, 2, "Flag:", curses.A_BOLD)
-        self.opt_info_box.addstr(4, 2, "Help Message:", curses.A_BOLD)
-        # Print a little help message
-        self.screen.addstr(22, 10,
-                           "Hit 'enter' to select items, 'q' to quit or 'e' to execute")
 
-    def refresh_options(self):
+        # Now we begin the program
+        self.screen.refresh()
+        # Get some user input
+        pack_name = self.pack_info_box.getstr(2, 11, 27).decode('utf-8')
+        pack_version = self.pack_info_box.getstr(3, 11, 27).decode('utf-8')
+        # Disable the users ability to type freely
+        curses.noecho()
+        # If the line is left empty, display the default value
+        if pack_name:
+            self.package_name = pack_name[:26]
+
+        if pack_version:
+            self.package_version = pack_version[:26]
+
+        output_folder = "%s-%s" % (self.package_name, self.package_version)
+        # Display information next to the titles
+        self.pack_info_box.addstr(2, 11, self.package_name)
+        self.pack_info_box.addstr(3, 11, self.package_version)
+        self.pack_info_box.addstr(4, 11, '/usr/local/tadman')
+        self.pack_info_box.addstr(5, 11, output_folder)
+        self.pack_info_box.addstr(6, 11, self.build_type)
+        self.pack_info_box.refresh()
+
+    def refresh_options_list(self):
 
         """ This quaint little function reads the option dictionary,
         and prints out checkboxes according to whether the value is
@@ -170,19 +184,27 @@ class MainInterface():
 
         self.opt_info_box.refresh()
 
-    def refresh_main_screen(self):
+    def refresh_option_windows(self):
 
-        """ This function is pretty self-explanitory. It simply
-        refreshes all of the main windows.
+        """ This method is pretty self-explanitory. It simply
+        refreshes all of the main windows that have to do with
+        choosing options.
         """
 
         self.screen.refresh()
-        self.refresh_options()
+        self.refresh_options_list()
         self.option_box.refresh()
-        self.pack_info_box.refresh()
         self.opt_info_box.refresh()
 
     def get_return_values(self):
+
+        """ This function simple returns all of the useful user input
+        that was gathered by the interface.
+
+        This input is returned in a list as follows:
+
+        [package_name, package_version, [indexes of options chosen]]
+        """
 
         return_list = []
 
@@ -202,39 +224,34 @@ class MainInterface():
         # Return a version of the list that is sorted by value
         return return_list
 
-    def main_loop(self):
+    def init_option_loop(self):
 
-        """ This is the main loop of the interface. It deals with
-        a large majority of the user input.
+        """ This method prepares the option choosing windows with
+        titles and other indicators to benefit the user experience.
+        Finally, it refreshes all of the necessary windows.
         """
 
-        self.screen.refresh()
-        pack_name = self.pack_info_box.getstr(2, 11, 27)[:26]
-        pack_version = self.pack_info_box.getstr(3, 11, 27)[:26]
-        # Disable the users ability to type freely
-        curses.noecho()
-        # If the line is left empty, display the default value
-        if pack_name.decode('utf-8') != '':
-            self.package_name = pack_name.decode('utf-8')
-
-        if pack_version.decode('utf-8') != '':
-            self.package_version = pack_version.decode('utf-8')
-
-        self.pack_info_box.addstr(2, 11, self.package_name)
-        self.pack_info_box.addstr(3, 11, self.package_version)
-
-        output_folder = "%s-%s" % (self.package_name, self.package_version)
-        self.pack_info_box.addstr(5, 11, output_folder)
-
+        # Set up the option info box for feature options
+        self.opt_info_box.addstr(2, 2, "Option index:", curses.A_BOLD)
+        self.opt_info_box.addstr(3, 2, "Flag:", curses.A_BOLD)
+        self.opt_info_box.addstr(4, 2, "Help Message:", curses.A_BOLD)
+        # If there are more options than available, indicate it
         if self.options_avail > 15:
             self.option_box.addstr(18, 13, "▼ More ▼", curses.A_BOLD)
-        # Add some more lines to the package info box
-        self.refresh_option_info_box(0)
 
-        self.refresh_main_screen()
-        self.option_pad.refresh(0, 0, 4, 2, 19, 32)
+        # Initialize the info in the option info box
+        self.refresh_option_info_box(0)
+        self.refresh_option_windows()
+        self.option_pad.refresh(0, 0, 4, 2, 19, 34)
         # Move the cursor to the start of the options list
         self.screen.move(4, 3)
+
+    def run_option_loop(self):
+
+        """ This is the option loop. It is in charge of controlling
+        the cursors position and the selection of items within the
+        option interface.
+        """
 
         key = ''
         exit_interface = True
@@ -255,15 +272,14 @@ class MainInterface():
             if key in [ord('e'), ord('q')]:
                 exit_interface = False
 
-            # When the up arrow is pressed, reduce y-value to move cursor up
-            elif key == curses.KEY_UP:
+            # When the up arrow is pressed, reduce y-value or scroll list up
+            if key == curses.KEY_UP:
                 if current_y == 4 and pad_offset > 0:
                     pad_offset -= 1
                 elif current_y > 4:
                     current_y -= 1
 
-            #  When the down arrow is pressed, increase y-value to move cursor
-            # down
+            #  When the down arrow is pressed, increase y or scroll list down
             elif key == curses.KEY_DOWN:
                 if current_y == 19 and pad_offset < maximum_offset:
                     pad_offset += 1
@@ -291,14 +307,14 @@ class MainInterface():
                 new_value = not self.toggle_dict[current_item]
                 self.toggle_dict[current_item] = new_value
 
-                self.refresh_options()
+                self.refresh_options_list()
 
             self.option_pad.refresh(pad_offset, 0, 4, 2, 19, 34)
 
             # Special chars: ▲ ▼ ↑ ↓
-
+            # While scrolling, indicate where there are more options available
             if pad_offset > 0:
-                self.option_box.addstr(1, 13, "↑ More ↑", curses.A_BOLD)
+                self.option_box.addstr(1, 13, "▲ More ▲", curses.A_BOLD)
             else:
                 self.option_box.addstr(1, 13, ' ' * 8)
 
@@ -314,48 +330,9 @@ class MainInterface():
             self.screen.refresh()
 
         curses.endwin()
-        # Following a quit or execute, return a value
+
+        # Return a value based on how the window was closed
         if key == ord('q'):
-            print("Tadman build canceled")
             return False
         elif key == ord('e'):
             return True
-
-
-if __name__ == '__main__':
-    S_DICT = {'Enable verbose build': ['--enable-verbose', 'Output extra info while configuring'],
-              'Enable unicode support': ['--enable-unicode', 'UTF-8 is the true master race!'],
-              'Disable squid mode': ['--disable-squid', 'What does this do?'],
-              'Disable colored output': ['--disable-color', 'Disable color for those that are colorblind'],
-              'Use old legacy driver': ['--enable-legacy-driver', 'For lovers of classic Linux 2.4']
-            }
-    L_DICT = {'Enable verbose build': ['--enable-verbose', 'Output extra info while configuring'],
-              'Enable unicode support': ['--enable-unicode', 'UTF-8 is the true master race!'],
-              'Disable squid mode': ['--disable-squid', 'What does this do?'],
-              'Disable colored output': ['--disable-color', 'Disable color for those that are colorblind'],
-              'Use old legacy driver': ['--enable-legacy-driver', 'For lovers of classic Linux 2.4'],
-              'Disable Option Checking': ['--disable-option-checking', 'Ignore unrecognized --enable/--with options'],
-              'Disable Feature': ['--disable-FEATURE', 'Do not include feature (same as --enable-feature=no)'],
-              'Enable Feature[=Arg]': ['--enable-FEATURE[=ARG]', 'Include feature [arg=yes]'],
-              'Enable Silent Rules': ['--enable-silent-rules', "Less verbose build output (undo: `make v=1')"],
-              'Disable Silent Rules': ['--disable-silent-rules', "Verbose build output (undo: `make v=0')"],
-              'Enable Strict Ansi': ['--enable-strict-ansi', 'Enable strict ansi compliance build [[default=no]]'],
-              'Enable Super Warnings': ['--enable-super-warnings', 'Enable extra compiler warnings [[default=no]]'],
-              'Enable Debug': ['--enable-debug', 'Build a debug version [[default=no]]'],
-              'Enable Gprof': ['--enable-gprof', 'Enable gprof profiling output [[default=no]]'],
-              'Enable Gprof Libc': ['--enable-gprof-libc', 'Link against libc with profiling support [[default=no]]'],
-              'Enable Dependency Tracking': ['--enable-dependency-tracking', 'Do not reject slow dependency extractors'],
-              'Enable Shared[=Pkgs]': ['--enable-shared[=PKGS]', 'Build shared libraries [default=yes]'],
-              'Enable Static[=Pkgs]': ['--enable-static[=PKGS]', 'Build static libraries [default=yes]'],
-              'Enable Fast Install[=Pkgs]': ['--enable-fast-install[=PKGS]', 'Optimize for fast installation [default=yes]'],
-              'Disable Nls': ['--disable-nls', 'Do not use native language support'],
-              'Disable Rpath': ['--disable-rpath', 'Do not hardcode runtime library paths'],
-              'Disable Startup Notification': ['--disable-startup-notification', 'Disable the startup notification library. [default=enabled]'],
-              'Disable Xcursor': ['--disable-xcursor', 'Disable use of the x cursor library. [default=enabled]'],
-              'Disable Xkb': ['--disable-xkb', 'Build without support for xkb extension [default=enabled]'],
-              'Disable Xsync': ['--disable-xsync', 'Build without support for xsync extension [default=enabled]']
-             }
-
-    N_INTERFACE = MainInterface(L_DICT, 'squid', '1.4.18', 'autotools')
-    if N_INTERFACE.main_loop():
-        print(N_INTERFACE.get_return_values())
