@@ -1,5 +1,7 @@
 """ This is the main script for the Tadman package manager. This script
 specifically utilizes the curses interface.
+
+Note: Many functions used in this script are in the tadman.main module.
 """
 
 # Standard

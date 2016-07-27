@@ -1,4 +1,9 @@
+""" This script contains several functions that deal with the careful
+handling of paths.
+"""
 
+# Standard
+import os
 
 def remove_empty_folders(path):
 
@@ -109,6 +114,12 @@ def digit_split(a_name):
 
 
 def name_version_split(a_path):
+
+    """ As the title states, this function reads a folder title, and
+    splits the package name and version (if available) from it. It
+    specializes in reading packages which are named 'name-version',
+    but it can read a few others.
+    """
 
     digit_in_name = False
 

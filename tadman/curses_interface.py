@@ -106,6 +106,12 @@ class MainInterface():
 
 
     def init_package_info_entry(self):
+
+        """ Once the script begins, it is a good idea to run this
+        function. It allows the user to enter vital package info
+        easily and efficiently.
+        """
+
         # Add some title lines
         self.pack_info_box.addstr(2, 2, "Package:", curses.A_BOLD)
         self.pack_info_box.addstr(3, 2, "Version:", curses.A_BOLD)
@@ -344,6 +350,11 @@ class MainInterface():
 
 
 def main_loop(a_dict, name, version, build_type):
+
+    """ This is a simple function with the goal of making scripts that
+    utilize this interface more clean. It sets all of the vital info,
+    and runs all of the major loops available in a specific order.
+    """
 
     interface = MainInterface(a_dict)
 

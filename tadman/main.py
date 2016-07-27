@@ -7,9 +7,14 @@ import os
 import subprocess
 import sys
 # Scripts
-from tadman import autotools, cmake, logger, path_tools
+from tadman import autotools, cmake, path_tools
 
 def simple_prompt(a_string):
+
+    """ This function simple prompts the user with a standard string
+    and yes or no input.
+    """
+
     prompt = "%s [y,N] " % a_string
     choice = input(prompt)
 
@@ -29,6 +34,11 @@ def check_for_root():
         sys.exit(1)
 
 def list_package_directory(a_path):
+
+    """ This function is mostly self explanitory. It prints out the
+    names of built package in the user's package directory.
+    """
+
     directory_contents_list = sorted(os.listdir(a_path), key=str.lower)
 
     for subpath in directory_contents_list:
@@ -37,14 +47,20 @@ def list_package_directory(a_path):
             print(subpath)
 
 def list_package_contents(root_path, a_path):
+
+    """ This function is a simplified version of the sym_farm
+    function. It lists where all of the files would be installed,
+    IF this package were to be installed. It currently has no way of
+    verifying if this is true or not as of right now.
+    """
+
     package_dir = find_link_path(root_path, a_path)
     remove_length = len(package_dir)
-    for root, dirs, files in os.walk(package_dir):
+    for root, _, files in os.walk(package_dir):
 
         for name in files:
 
             rel_path = os.path.join(root, name)
-            abs_path = os.path.abspath(rel_path)
             new_path = rel_path[remove_length:]
 
             print(new_path)
@@ -66,6 +82,14 @@ def find_build_type(a_path):
     return build_type
 
 def get_package_info(a_path):
+
+    """ This function determines which build system is used by viewing
+    the files available in the root of a source code directory. It
+    runs the name_version_split function, which returns a believed
+    package name and package version straigh from the source folder's
+    name.
+    """
+
     # Get the name and version from the basename of the source path
     package_name, package_version = path_tools.name_version_split(a_path)
 
@@ -82,6 +106,11 @@ def get_package_info(a_path):
     return clean_dict, package_name, package_version, build_type
 
 def configure_maker(in_dict, in_list, mode):
+
+    """ The configure_maker function creates a list of commands
+    and options flags based on the output of the GUI used to
+    select options.
+    """
 
     configure_indexes = in_list
     configure_list = []
@@ -109,6 +138,12 @@ def configure_maker(in_dict, in_list, mode):
     return option_list
 
 def build_package_source(a_path, output_directory, configure_command):
+
+    """ This function runs some simple commands in order to configure
+    and build source code. It also installs in to the user's package
+    directory. How nice.
+    """
+
     # Change to the directory
     os.chdir(a_path)
     # Run the configuration command with options
@@ -119,6 +154,12 @@ def build_package_source(a_path, output_directory, configure_command):
     subprocess.run(['make', "DESTDIR=%s" % output_directory, 'install'])
 
 def find_link_path(root_dir, name_or_path):
+
+    """ When installing and uninstall packages using Tadman, the user
+    is allowed to pass in an absolute path to the package, or just
+    it's name. This is the function that decides what the input is,
+    and returns the desire path.
+    """
 
     link_path = ()
     root_path = root_dir
@@ -139,6 +180,8 @@ def find_link_path(root_dir, name_or_path):
     return link_path
 
 def print_help_message():
+
+    """ This function prints a help message. Enough said."""
 
     arg_dict = {'build': "Build a package from source and install",
                 'help': "Print this help message and exit",

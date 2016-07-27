@@ -1,5 +1,7 @@
-""" This script includes all of the functions necessary to handle an
-autotools based build.
+""" This script includes all of the functions necessary to handle a
+build using GNU Autotools. It generally runs the configure script,
+find the available options, and then processes them into a dictionary
+for use by a GUI frontend.
 """
 
 # Standard
@@ -48,6 +50,17 @@ def find_first(search_list, phrase):
 
 def get_options_list(path):
 
+    """ This function runs the configure script in a package's source
+    directory, and reads it's output to a string. From here, the
+    string is broken up into a list of many strings by cutting at
+    newline characters. Finally, it find where all of the Optional
+    Features are listed, and filters out all of the other gibberish.
+
+    This function returns a list containing all of the option flags,
+    along with their brief help messages inside of strings. The output
+    is generally sent directly to the option_processor function below.
+    """
+
     configure_file_path = "%s/configure" % path
     output_string = subprocess.check_output([configure_file_path, '--help'])
     output_string = output_string.decode('utf-8')
@@ -64,6 +77,10 @@ def get_options_list(path):
 
 def option_to_title(an_option):
 
+    """ This function turns flags like '--disable-debug' into pretty
+    titles, like 'Disable debug' for use in GUIs.
+    """
+
     option = an_option.replace('-', ' ')
     option = option.lstrip(' ')
     option = option.title()
@@ -76,10 +93,10 @@ def option_processor(a_list):
     uses all the functions above in a kinda smart way to clean up all of
     the lines from autotools_config_write.
 
-    This function returns a processed dictionary containing options in the
-    format of:
+    This function returns a processed (Ordered) dictionary containing
+    options in the format of:
 
-        title: [cli_option, help_message]
+        title: [option_flag, help_message]
     """
 
     filtered_list = []

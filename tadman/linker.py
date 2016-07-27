@@ -1,3 +1,8 @@
+""" This function contains functions which help to link packages to
+the user's root directory. It also unlinks them. Which ever you
+prefer.
+"""
+
 # Standard
 import os
 

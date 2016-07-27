@@ -1,7 +1,15 @@
+""" This script is an experiment in logging the installation state
+of each package.
+"""
+
 import getpass
 import time
 
 def build_logger(a_path):
+
+    """ This function logs when a package was built and placed inside
+    of the user's package directory using a 'tad.log' file.
+    """
 
     log_path = "%s/tad.log" % a_path
 
