@@ -10,9 +10,9 @@ tadman - An intuitive symlink package manager written in Python
 
 == SYNOPSIS
 
-*tadman-curses* [ARGUMENT]
+*tadman-curses* ARGUMENT [...]
 
-*tadman-gtk* [ARGUMENT]
+*tadman-gtk* ARGUMENT [...]
 
 == DESCRIPTION
 
@@ -30,15 +30,20 @@ Similarly, Tadman can uninstall packages by removing all symlinks.
 
 == ARGUMENTS
 
-*build [PATH]* - Run the standard build and install process
+*build <PATH>* - Run the standard build process, including entering package
+info and choosing options. Then prompt for an install
 
-*help* - Print this help message.
+*help* - Print this help message and exit
 
-*install [NAME]* - Link files in a package's install directory to root
+*install <NAME>* - Link files in a package's install directory to root
 
-*uninstall [NAME]* - Unlink files from root folders
+*list [NAME]* - If no argument is passes, list will provide all of the built
+packages with the package directory (/usr/local/tadman by default). If a name
+is passed, all of the files installed for NAME will be printed.
 
-*version* - Print a version string
+*uninstall <NAME>* - Unlink files from root folders
+
+*version* - Print a version string and exit
 
 == EXAMPLES
 

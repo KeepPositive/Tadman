@@ -1,12 +1,17 @@
+""" This script includes a bunch of functions used by the scripts in the bin/
+directory, like tadman-curses.
+"""
+
 # Standard
 import os
 import subprocess
 import sys
 # Scripts
-from tadman import *
+from tadman import autotools, cmake, logger, path_tools
 
-def simple_prompt():
-    choice = input("Would you like to install the package? [y,N] ")
+def simple_prompt(a_string):
+    prompt = "%s [y,N] " % a_string
+    choice = input(prompt)
 
     if choice in ['n', 'N', '']:
         return False
@@ -16,12 +21,33 @@ def simple_prompt():
 def check_for_root():
 
     """ Simply check whether the user running the script is the root
-    user. If not, end the script prematurely and throw a message out.
+    user. If not, end the script prematurely and throw an error message.
     """
 
     if os.geteuid() != 0:
         print("Only root can execute this command")
         sys.exit(1)
+
+def list_package_directory(a_path):
+    directory_contents_list = sorted(os.listdir(a_path), key=str.lower)
+
+    for subpath in directory_contents_list:
+        full_subpath = os.path.join(a_path, subpath)
+        if os.path.isdir(full_subpath):
+            print(subpath)
+
+def list_package_contents(root_path, a_path):
+    package_dir = find_link_path(root_path, a_path)
+    remove_length = len(package_dir)
+    for root, dirs, files in os.walk(package_dir):
+
+        for name in files:
+
+            rel_path = os.path.join(root, name)
+            abs_path = os.path.abspath(rel_path)
+            new_path = rel_path[remove_length:]
+
+            print(new_path)
 
 def find_build_type(a_path):
 
@@ -111,3 +137,17 @@ def find_link_path(root_dir, name_or_path):
             return ''
 
     return link_path
+
+def print_help_message():
+
+    arg_dict = {'build': "Build a package from source and install",
+                'help': "Print this help message and exit",
+                'install': "Create symlinks for a built package",
+                'list': "List all built software packages",
+                'uninstall': "Destroy all symlinks for a package",
+                'version': "Print version info and exit"}
+
+    print("Usage: tadman [ARGUMENT] [...]\n\nArguments:")
+
+    for argument in sorted(arg_dict):
+        print("    %s\t%s" % (argument, arg_dict[argument]))

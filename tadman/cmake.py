@@ -5,26 +5,8 @@
 import collections
 import os
 import subprocess
-
-def remove_empty_folders(path):
-
-    """ This method removes everything within a directory. Great stuff.
-
-    Credit for this method goes to Jacob Tomlinson. Thanks!
-    Check it out his website at: https://www.jacobtomlinson.co.uk
-    """
-
-    if not os.path.isdir(path):
-        return
-
-    # Remove empty subfolders
-    files = os.listdir(path)
-    if len(files):
-        for a_file in files:
-            full_path = os.path.join(path, a_file)
-            if os.path.isdir(full_path):
-                remove_empty_folders(full_path)
-
+# Scripts
+import tadman.path_tools
 
 def get_options_list(a_path):
 
@@ -44,7 +26,7 @@ def get_options_list(a_path):
             # Create the tadman_build dir
             os.mkdir(cmake_build_dir)
         else:
-            remove_empty_folders(cmake_build_dir)
+            tadman.path_tools.remove_empty_folders(cmake_build_dir)
         # Change to the directory so files will be stored there
         os.chdir(cmake_build_dir)
         subprocess.run(['cmake', a_path])
