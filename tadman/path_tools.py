@@ -1,6 +1,4 @@
-## Standard
-import os
-import sys
+
 
 def last_slash_check(a_path):
 
@@ -15,9 +13,7 @@ def last_slash_check(a_path):
 
     return new_path
 
-#  These functions down here used to be part of a name_split script. It is
-# now part of path_tools
-def path_split(a_path):
+def path_spliter(a_path):
 
     """ Since os.path.basename is not completely reliable when finding the
     basename of a directory (the user may enter it ending with a slash) so
@@ -67,7 +63,7 @@ def digit_split(a_name):
     index = 0
     digit_count = 0
     split_or_not = False
-    split_index = ()
+    split_index = 0
 
     print(name_length - 1)
     while (index < (name_length - 1)) and (digit_count < 2):
@@ -97,7 +93,7 @@ def name_version_split(a_path):
 
     digit_in_name = False
 
-    a_name = path_split(a_path)
+    a_name = path_spliter(a_path)
 
     for char in a_name:
         if char.isdigit():

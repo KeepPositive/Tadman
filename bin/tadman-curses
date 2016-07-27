@@ -1,0 +1,70 @@
+""" This is the main script for the Tadman package manager. This script
+specifically utilizes the curses interface.
+"""
+
+# Standard
+import os
+import sys
+# Scripts
+import tadman.curses_interface
+import tadman.main
+import tadman.path_tools
+import tadman.symbolic_linker
+
+arguments = sys.argv
+mode = arguments[1]
+
+if mode == 'help':
+    print("HELP!")
+
+elif mode == 'version':
+    print("Tadman 0.1.0")
+
+elif mode == 'list':
+    print("list")
+
+elif mode == 'build':
+    # Make sure a path to directory is available and exists
+    try:
+        package_path = tadman.path_tools.last_slash_check(arguments[2])
+        if not os.path.isdir(arguments[2]):
+            print("Invalid directory entered")
+            sys.exit(0)
+    except IndexError:
+        print("You are missing the PATH argument")
+        sys.exit(0)
+
+    # Ensure the user running the script is the root user
+    tadman.main.check_for_root()
+    # Get info from the package
+    package_info = tadman.main.get_package_info(package_path)
+    clean_dict = package_info[0]
+    package_name = package_info[1]
+    package_version = package_info[2]
+    build_type = package_info[3]
+    # Run the curses-based user interface using the info from above
+    interface = tadman.curses_interface.main_loop(clean_dict, package_name,
+                                                  package_version, build_type)
+    # Generate the options from the selection indexes
+    command = tadman.main.configure_maker(clean_dict, interface[2], build_type)
+    output_directory = "%s/%s-%s" % ('/usr/local/tadman', interface[0],
+                                     interface[1])
+    # Finally, build the package
+    tadman.main.build_package_source(package_path, output_directory, command)
+    if tadman.main.simple_prompt():
+        tadman.symbolic_linker.sym_farm(output_directory)
+
+elif mode in ['install', 'uninstall']:
+    # Make sure a path to directory is available and exists
+    try:
+        link_to_path = tadman.path_tools.last_slash_check(arguments[2])
+        link_to_path = tadman.main.find_link_path('/usr/local/tadman',
+                                                  link_to_path)
+    except IndexError:
+        print("You are missing the PATH_OR_NAME argument")
+        sys.exit(0)
+    print(link_to_path)
+    if mode == 'install':
+        tadman.symbolic_linker.sym_farm(link_to_path)
+    elif mode == 'uninstall':
+        tadman.symbolic_linker.sym_reap(link_to_path)

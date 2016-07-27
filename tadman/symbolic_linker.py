@@ -1,7 +1,7 @@
 # Standard
 import os
 
-def sym_farm(package_path_or_name):
+def sym_farm(package_path):
 
     """ This function walks through a directory, and recreates its structure
     by recreating the subdirectories within the root directory. For each file,
@@ -9,17 +9,11 @@ def sym_farm(package_path_or_name):
     entire file structure is recreated within the root.
     """
 
-    if os.path.isdir(package_path_or_name):
-        start_dir = package_path_or_name
-    elif os.path.isdir("/usr/local/tadman/%s" % package_path_or_name):
-        start_dir = "/usr/local/tadman/%s" % package_path_or_name
-    else:
-        print("Package not found in database")
+    start_dir = package_path
 
     for root, dirs, files in os.walk(start_dir):
 
         sub_length = len(start_dir)
-        print(start_dir)
         # For each subdirectory within the starting directory
         for name in dirs:
 
@@ -32,8 +26,6 @@ def sym_farm(package_path_or_name):
             else:
                 print("Directory %s already exists" % sub_fold)
 
-        file_list = []
-
         # For each file within the starting directory
         for name in files:
 
@@ -43,14 +35,13 @@ def sym_farm(package_path_or_name):
             rel_path = os.path.join(root, name)
             abs_path = os.path.abspath(rel_path)
             new_path = rel_path[sub_length:]
+            try:
+                os.symlink(abs_path, new_path)
+                print("%s --> %s" % (new_path, abs_path))
+            except FileExistsError:
+                print("File %s already exists" % new_path)
 
-            os.symlink(abs_path, new_path)
-            file_list.append(new_path)
-            print("%s --> %s" % (new_path, abs_path))
-
-        print()
-
-def sym_reap(package_path_or_name):
+def sym_reap(package_path):
 
     """
      This function removes any exisiting links that were created by the
@@ -60,17 +51,10 @@ def sym_reap(package_path_or_name):
     This function does not return anything.
     """
 
-    if os.path.isdir(package_path_or_name):
-        unlink_path = package_path_or_name
-    elif os.path.isdir("/usr/local/tadman/%s" % package_path_or_name):
-        unlink_path = "/usr/local/tadman/%s" % package_path_or_name
-    else:
-        print("Package not found in database")
+    unlink_path = package_path
+    sub_length = len(unlink_path)
 
     for root, dirs, files in os.walk(unlink_path):
-
-        sub_length = len(unlink_path)
-
         # For each file within the starting directory
         for name in files:
 
@@ -83,14 +67,12 @@ def sym_reap(package_path_or_name):
 
             if os.path.islink(new_path):
                 os.remove(new_path)
-                print("%s -x> %s" % (new_path, abs_path))
+                print("%s -X> %s" % (new_path, abs_path))
             else:
-                print("%s is not a link" % new_path)
-
+                print("File %s is not a link" % new_path)
 
     # For each subdirectory within the starting directory
     for root, dirs, files in os.walk(unlink_path):
-
         directory_list = []
 
         for name in dirs:
@@ -107,7 +89,5 @@ def sym_reap(package_path_or_name):
             elif os.listdir(directory) != []:
                 print("Directory %s is not empty" % directory)
             else:
-                os.remove(directory)
-                print("Removing %s" % directory)
-
-    print()
+                os.rmdir(directory)
+                print("Removing directory %s" % directory)

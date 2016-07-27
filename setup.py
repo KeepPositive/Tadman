@@ -1,7 +1,6 @@
 import os
 import setuptools
 import subprocess
-import sys
 
 def which(a_file):
     for a_path in os.environ["PATH"].split(os.pathsep):
@@ -12,8 +11,7 @@ def which(a_file):
             return test_path
 
     else:
-        print('%s not found in path, please install it' % a_file)
-        sys.exit(0)
+        return False
 
 setuptools.setup(
     # Package info
@@ -24,25 +22,21 @@ setuptools.setup(
     author = "Ted Moseley",
     author_email = "tmoseley1106@gmail.com",
     url = "https://github.com/KeepPositive/Tadman",
-
-    # File info
-    packages = ["tad_autotools",
-                "tad_cmake",
-                "tad_interface",
-                "tad_tools"],
-
-    scripts = ["tadman"])
+    # File/Directory info
+    packages = ["tadman"],
+    scripts = ["bin/tadman-curses"])
 
 
 # Documentation related stuff
-
 input_file = "%s/docs/tadman.man.adoc" % os.getcwd()
 output_file = "/usr/share/man/man8/tadman.8"
 
 adoc = which('asciidoctor')
 
-subprocess.call([adoc, "--backend", "manpage", "--doctype", "manpage",
+if adoc:
+    subprocess.call([adoc, "--backend", "manpage", "--doctype", "manpage",
                      "--out-file", output_file, input_file])
 
-print("Tadman manpage installed at %s" % output_file)
-
+    print("Tadman manpage installed at %s" % output_file)
+else:
+    print('%s not found in path, please install it' % a_file)

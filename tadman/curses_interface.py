@@ -2,6 +2,7 @@
 the functionality of the GTK+ version, but use very few dependencies
 and be accessible from a terminal interface.
 """
+
 # Standard
 import curses
 
@@ -60,9 +61,13 @@ class MainInterface():
     functionality.
     """
 
-    def __init__(self, a_dict, name, version, build_type):
+    def __init__(self, a_dict):
 
         self.option_dict = a_dict
+        self.package_name = ''
+        self.package_version = ''
+        self.build_type = ''
+
         self.option_list = []
         self.toggle_dict = {}
         self.options_avail = 0
@@ -72,9 +77,6 @@ class MainInterface():
             self.toggle_dict[item] = False
             self.options_avail += 1
 
-        self.package_name = name
-        self.package_version = version
-        self.build_type = build_type
 
         # Initialize and prepare the main screen
         self.screen = curses.initscr()
@@ -98,15 +100,18 @@ class MainInterface():
 
         # Create a sub window for package information
         self.pack_info_box = box_generator('package info', 9, 44, 2, 36)
+
+        # Create a sub window for option information
+        self.opt_info_box = box_generator('option info', 11, 44, 11, 36)
+
+
+    def init_package_info_entry(self):
         # Add some title lines
         self.pack_info_box.addstr(2, 2, "Package:", curses.A_BOLD)
         self.pack_info_box.addstr(3, 2, "Version:", curses.A_BOLD)
         self.pack_info_box.addstr(4, 2, 'DestDir:', curses.A_BOLD)
         self.pack_info_box.addstr(5, 2, 'FldName:', curses.A_BOLD)
         self.pack_info_box.addstr(6, 2, 'BldType:', curses.A_BOLD)
-
-        # Create a sub window for option information
-        self.opt_info_box = box_generator('option info', 11, 44, 11, 36)
 
         # Now we begin the program
         self.screen.refresh()
@@ -336,3 +341,19 @@ class MainInterface():
             return False
         elif key == ord('e'):
             return True
+
+
+def main_loop(a_dict, name, version, build_type):
+
+    interface = MainInterface(a_dict)
+
+    interface.package_name = name
+    interface.package_version = version
+    interface.build_type = build_type
+
+    interface.init_package_info_entry()
+
+    interface.init_option_loop()
+    interface.run_option_loop()
+
+    return interface.get_return_values()

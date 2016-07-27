@@ -1,26 +1,50 @@
 = Tadman
 
-Some Package Manager Written in Python
+__Some Package Manager Written in Python__
 
-This is a (universal?) package manager that is currently in developement. It
-is being designed to act as wrapper for basic commands like autotools and
-CMake. It is written in pure python, and has very few dependencies.
+== About
 
-== Dependencies
+=== What It Does
 
-The necessary dependencies are:
+Tadman acts as a wrapper for common build systems and makes configuring and
+building source code easier than ever. It then (by default) installs the built
+source in the '/usr/local/tadman/PACKAGE-NAME' and symlinks the files to your
+root directory where they belong (similiar to GNU Stow). Uninstalling an old
+program is as easy as running a single command:
 
-* Python 3 (_obviously_)
-* pygobject (for the GTK+ 3 interface)
+``$ sudo tadman-curses uninstall PACKAGE-NAME``
 
-Some optional dependencies are:
+=== What It Does Not Do
 
-* CMake, to build CMake projects (You can find it 
-https://cmake.org/[here])
+A flaw that one may see is Tadman's lack up dependency tracking; This is an
+intentional design choice. While it may not be the fastest approach, Tadman
+does not wish to make choices for the user like other package managers.
 
-== Installation
+With Tadman, there are no package maintainers or unnecessary dependencies.
+Rather, it gives the user direct access to the world's largest and most
+up-to-date software library: the internet (and GitHub). Just find some source
+code, and install it using a single command:
 
-Tadman can be install using git and setuptools using the following commands
+``$ sudo tadman-curses build PACKAGE-PATH``
+
+== Try It Out
+
+=== Dependencies
+
+The only necessary dependency for Tadman are:
+
+* python3 (built with curses support)
+* Setuptools module for python3
+
+Though, there are several optional dependencies:
+
+* asciidoctor (to generate the manual page)
+* CMake (to build CMake-based projects)
+* pygobject (to use the GTK+ 3 interface)
+
+=== Installation
+
+Tadman can be installed using Git and Setuptools using the following commands
 on a GNU/Linux system:
 
 ```
@@ -29,23 +53,21 @@ $ cd Tadman
 # python3 setup.py install
 ```
 
-You should now have an executable named ``tadman`` in your path.
+You should now have an executable named ``tadman-curses`` in your path.
 
-== Execution
+=== Usage
 
-Tadman should make building source code packages easier. Try it out by 
+Tadman should make building source code packages easier. Try it out by
 downloading some source code that uses autotools or CMake, and then run the
 following:
 
-```
-$ python3 tadman_main.py [ARGUMENT] [PATH]
-```
+``$ python3 tadman-curses build [PATH]``
 
-A GTK+ 3 GUI will open, where you can check off the options you want, or 
-leave the ones you don't blank. Then make sure the proper program name and
-version are set on the right via the text boxes. Once you are ready, hit 
-run, and assuming you have all of the dependencies necessary, your program 
-will be installed. 
+A curses-based GUI will open, and prompt you for the package name and version
+(necessary for better book-keeping of the installation). Next, an options list
+will appear, where you can check off the options you want, or leave the ones
+you don't blank. Once you are ready, hit 'e', and assuming you have all of
+the dependencies your program requires, the program will be installed.
 
-For a complete list of availble arguments, check out
+For a complete list of available arguments, check out
 link:docs/tadman.man.adoc[the man page].

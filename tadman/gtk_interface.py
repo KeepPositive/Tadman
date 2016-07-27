@@ -4,7 +4,7 @@ are a few tidbits I would like to improve still, like searching, and adding
 values to options with an equals at the end.
 """
 
-## Dependencies
+# Dependencies
 import gi
 gi.require_version('Gtk', '3.0')
 import gi.repository.Gtk as Gtk
@@ -166,7 +166,55 @@ class MainInterface(Gtk.Window):
         return self.info_list
 
 
-def gui_main(mode, pack_name, pack_version, a_list):
+class InstallInterface(Gtk.Window):
+
+    def __init__(self, package_name):
+
+        self.install_choice = ()
+
+        Gtk.Window.__init__(self, title="Install")
+
+        self.set_default_size(300, 100)
+        self.set_resizable(False)
+        self.connect("delete-event", Gtk.main_quit)
+
+        main_box = Gtk.VBox()
+        button_box = Gtk.HBox()
+
+        install_message = "Would you like to install %s?" % package_name
+        intro_label = Gtk.Label(install_message)
+        install_button = Gtk.Button(label='Install')
+        cancel_button = Gtk.Button(label='Cancel')
+
+        install_button.connect('clicked', self.install_was_pressed)
+        cancel_button.connect('clicked', self.cancel_was_pressed)
+
+        self.add(main_box)
+        button_box.pack_start(install_button, True, True, 5)
+        button_box.pack_start(cancel_button, True, True, 5)
+
+        main_box.pack_start(intro_label, True, True, 0)
+        main_box.pack_start(button_box, True, True, 5)
+
+
+    def install_was_pressed(self, widget):
+
+        self.install_choice = True
+
+        Gtk.main_quit()
+
+    def cancel_was_pressed(self, widget):
+
+        self.install_choice = False
+
+        Gtk.main_quit()
+
+    def get_choice(self):
+
+        return self.install_choice
+
+
+def run_main(mode, pack_name, pack_version, a_list):
 
     """ A main function to run the entire GUI. Nothing all that special."""
 
@@ -178,9 +226,10 @@ def gui_main(mode, pack_name, pack_version, a_list):
 
     return window.get_return_info()
 
+def run_install(package_name):
 
-if __name__ == '__main__':
-    # For testing purposes ;)
-    OPTIONS = [['YOOO', '--enable-yo', "Enable native slang support in browser"],
-               ['Squiddy', '--disable-squid', "Disable the standard Squiddy theme"]]
-    GUI = gui_main('autotools', 'ted_test', '3.2.1', OPTIONS)
+    window = InstallInterface(package_name)
+    window.show_all()
+    Gtk.main()
+
+    return window.get_choice()
