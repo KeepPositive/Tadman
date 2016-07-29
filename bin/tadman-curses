@@ -11,7 +11,7 @@ import sys
 import tadman.curses_interface
 import tadman.main
 import tadman.path_tools
-import tadman.symbolic_linker
+import tadman.linker
 
 INSTALL_PATH = '/usr/local/tadman'
 
@@ -34,7 +34,7 @@ elif mode == 'build':
     # Make sure a path to directory is available and exists
     try:
         package_path = tadman.path_tools.last_slash_check(arguments[2])
-        if not os.path.isdir(arguments[2]):
+        if not os.path.isdir(package_path):
             print("Invalid directory entered")
             sys.exit(0)
     except IndexError:
@@ -45,10 +45,7 @@ elif mode == 'build':
     tadman.main.check_for_root()
     # Get info from the package
     package_info = tadman.main.get_package_info(package_path)
-    clean_dict = package_info[0]
-    package_name = package_info[1]
-    package_version = package_info[2]
-    build_type = package_info[3]
+    clean_dict, package_name, package_version, build_type = package_info
     # Run the curses-based user interface using the info from above
     interface = tadman.curses_interface.main_loop(clean_dict, package_name,
                                                   package_version, build_type)
@@ -58,20 +55,22 @@ elif mode == 'build':
     # Finally, build the package
     tadman.main.build_package_source(package_path, output_directory, command)
     if tadman.main.simple_prompt("Would you like to install this package?"):
-        tadman.symbolic_linker.sym_farm(output_directory)
+        tadman.linker.sym_farm(output_directory)
 
 elif mode in ['install', 'uninstall']:
     # Make sure a path to directory is available and exists
     try:
         link_to_path = tadman.path_tools.last_slash_check(arguments[2])
-        link_to_path = tadman.main.find_link_path(INSTALL_PATH, link_to_path)
     except IndexError:
         print("You are missing the PATH_OR_NAME argument")
         sys.exit(0)
+    else:
+        link_to_path = tadman.main.find_link_path(INSTALL_PATH, link_to_path)
+
     print(link_to_path)
     if mode == 'install':
-        tadman.symbolic_linker.sym_farm(link_to_path)
+        tadman.linker.sym_farm(link_to_path)
     elif mode == 'uninstall':
-        tadman.symbolic_linker.sym_reap(link_to_path)
+        tadman.linker.sym_reap(link_to_path)
         if tadman.main.simple_prompt("Would you like to delete this package?"):
             tadman.path_tools.remove_empty_folders(link_to_path)

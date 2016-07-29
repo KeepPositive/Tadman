@@ -194,3 +194,8 @@ def print_help_message():
 
     for argument in sorted(arg_dict):
         print("    %s\t%s" % (argument, arg_dict[argument]))
+
+    print()
+    print("Copyright © 2016 Ted Moseley. Free use of this software is")
+    print("granted under the terms of the MIT License")
+    print("<https://opensource.org/licenses/MIT>.")

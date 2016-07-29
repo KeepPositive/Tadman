@@ -8,7 +8,7 @@ __Some Package Manager Written in Python__
 
 Tadman acts as a wrapper for common build systems and makes configuring and
 building source code easier than ever. It then (by default) installs the built
-source in the '/usr/local/tadman/PACKAGE-NAME' and symlinks the files to your
+package in the '/usr/local/tadman/PACKAGE-NAME' and symlinks the files to your
 root directory where they belong (similiar to GNU Stow). Uninstalling an old
 program is as easy as running a single command:
 
@@ -16,14 +16,14 @@ program is as easy as running a single command:
 
 === What It Does Not Do
 
-A flaw that one may see is Tadman's lack up dependency tracking; This is an
+A flaw that one may note is Tadman's lack of dependency tracking; This is an
 intentional design choice. While it may not be the fastest approach, Tadman
 does not wish to make choices for the user like other package managers.
 
 With Tadman, there are no package maintainers or unnecessary dependencies.
 Rather, it gives the user direct access to the world's largest and most
-up-to-date software library: the internet (and GitHub). Just find some source
-code, and install it using a single command:
+up-to-date software library: the internet (and especially GitHub). Just find
+some source code, and install it using a single command:
 
 ``$ sudo tadman-curses build PACKAGE-PATH``
 
@@ -31,7 +31,7 @@ code, and install it using a single command:
 
 === Dependencies
 
-The only necessary dependency for Tadman are:
+The only necessary dependencies for Tadman are:
 
 * python3 (built with curses support)
 * Setuptools module for python3
@@ -40,7 +40,7 @@ Though, there are several optional dependencies:
 
 * asciidoctor (to generate the manual page)
 * CMake (to build CMake-based projects)
-* pygobject (to use the GTK+ 3 interface)
+* pygobject and GTK+3 (to use the GTK+ 3 interface)
 
 === Installation
 
