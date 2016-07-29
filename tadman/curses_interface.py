@@ -233,6 +233,7 @@ class MainInterface():
 
         return_list.append(sorted(index_list, key=int))
         # Return a version of the list that is sorted by value
+        print(return_list)
         return return_list
 
     def init_option_loop(self):
@@ -365,6 +366,9 @@ def main_loop(a_dict, name, version, build_type):
     interface.init_package_info_entry()
 
     interface.init_option_loop()
-    interface.run_option_loop()
+    build_package = interface.run_option_loop()
 
-    return interface.get_return_values()
+    if build_package:
+        return interface.get_return_values()
+    else:
+        return False

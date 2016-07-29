@@ -49,13 +49,19 @@ elif mode == 'build':
     # Run the curses-based user interface using the info from above
     interface = tadman.curses_interface.main_loop(clean_dict, package_name,
                                                   package_version, build_type)
-    # Generate the options from the selection indexes
-    command = tadman.main.configure_maker(clean_dict, interface[2], build_type)
-    output_directory = "%s/%s-%s" % (INSTALL_PATH, interface[0], interface[1])
-    # Finally, build the package
-    tadman.main.build_package_source(package_path, output_directory, command)
-    if tadman.main.simple_prompt("Would you like to install this package?"):
-        tadman.linker.sym_farm(output_directory)
+    if interface:
+        # Generate the options from the selection indexes
+        command = tadman.main.configure_maker(clean_dict, interface[2],
+                                              build_type)
+        output_directory = "%s/%s-%s" % (INSTALL_PATH, interface[0],
+                                         interface[1])
+        # Finally, build the package
+        tadman.main.build_package_source(package_path, output_directory,
+                                         command)
+        if tadman.main.simple_prompt("Would you like to install this package?"):
+            tadman.linker.sym_farm(output_directory)
+    else:
+        print("Tadman exited")
 
 elif mode in ['install', 'uninstall']:
     # Make sure a path to directory is available and exists
