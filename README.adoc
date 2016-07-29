@@ -2,19 +2,17 @@
 
 __Some Package Manager Written in Python__
 
-== About
-
-=== What It Does
+== What It Does
 
 Tadman acts as a wrapper for common build systems and makes configuring and
 building source code easier than ever. It then (by default) installs the built
 package in the '/usr/local/tadman/PACKAGE-NAME' and symlinks the files to your
-root directory where they belong (similiar to GNU Stow). Uninstalling an old
+root directory where they belong, similiar to GNU Stow. Uninstalling an old
 program is as easy as running a single command:
 
 ``$ sudo tadman-curses uninstall PACKAGE-NAME``
 
-=== What It Does Not Do
+== What It Does Not Do
 
 A flaw that one may note is Tadman's lack of dependency tracking; This is an
 intentional design choice. While it may not be the fastest approach, Tadman
@@ -27,9 +25,7 @@ some source code, and install it using a single command:
 
 ``$ sudo tadman-curses build PACKAGE-PATH``
 
-== Try It Out
-
-=== Dependencies
+== Dependencies
 
 The only necessary dependencies for Tadman are:
 
@@ -42,7 +38,7 @@ Though, there are several optional dependencies:
 * CMake (to build CMake-based projects)
 * pygobject and GTK+3 (to use the GTK+ 3 interface)
 
-=== Installation
+== Installation
 
 Tadman can be installed using Git and Setuptools using the following commands
 on a GNU/Linux system:
@@ -55,7 +51,7 @@ $ cd Tadman
 
 You should now have an executable named ``tadman-curses`` in your path.
 
-=== Usage
+== Usage
 
 Tadman should make building source code packages easier. Try it out by
 downloading some source code that uses autotools or CMake, and then run the
@@ -70,4 +66,9 @@ you don't blank. Once you are ready, hit 'e', and assuming you have all of
 the dependencies your program requires, the program will be installed.
 
 For a complete list of available arguments, check out
-link:docs/tadman.man.adoc[the man page].
+link:docs/tadman.man.adoc[the manpage].
+
+== Licensing
+
+Copyright © 2016 Ted Moseley. Free use of this software is granted under the
+terms of the MIT License <https://opensource.org/licenses/MIT>.
