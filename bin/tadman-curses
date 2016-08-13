@@ -5,6 +5,7 @@ Note: Many functions used in this script are in the tadman.main module.
 """
 
 # Standard
+import curses
 import os
 import sys
 # Scripts
@@ -16,7 +17,13 @@ import tadman.linker
 INSTALL_PATH = '/usr/local/tadman'
 
 arguments = sys.argv
-mode = arguments[1]
+arg_length = len(arguments)
+
+if arg_length == 1:
+    tadman.main.print_help_message()
+    sys.exit(1)
+else:
+     mode = arguments[1]
 
 if mode == 'help':
     tadman.main.print_help_message()
@@ -45,10 +52,12 @@ elif mode == 'build':
     tadman.main.check_for_root()
     # Get info from the package
     package_info = tadman.main.get_package_info(package_path)
-    clean_dict, package_name, package_version, build_type = package_info
+    clean_dict, install_dict, package_name, package_version, build_type = package_info
     # Run the curses-based user interface using the info from above
-    interface = tadman.curses_interface.main_loop(clean_dict, package_name,
-                                                  package_version, build_type)
+    interface = tadman.curses_interface.main_loop(clean_dict, install_dict,
+                                                                 package_name,
+                                                                 package_version,
+                                                                 build_type)
     if interface:
         # Generate the options from the selection indexes
         command = tadman.main.configure_maker(clean_dict, interface[2],

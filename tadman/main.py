@@ -97,13 +97,14 @@ def get_package_info(a_path):
     build_type = find_build_type(a_path)
     # Get the available options based on what build system is found
     if build_type == 'autotools':
-        raw_list = autotools.get_options_list(a_path)
+        raw_list, install_list = autotools.get_config_lists(a_path)
         clean_dict = autotools.option_processor(raw_list)
+        install_dict = autotools.install_flag_processor(install_list)
     elif build_type == 'cmake':
         raw_list = cmake.get_options_list(a_path)
         clean_dict = cmake.option_processor(raw_list)
 
-    return clean_dict, package_name, package_version, build_type
+    return clean_dict, install_dict, package_name, package_version, build_type
 
 def configure_maker(in_dict, in_list, mode):
 
@@ -183,19 +184,21 @@ def print_help_message():
 
     """ This function prints a help message. Enough said."""
 
-    arg_dict = {'build': "Build a package from source and install",
-                'help': "Print this help message and exit",
-                'install': "Create symlinks for a built package",
-                'list': "List all built software packages",
-                'uninstall': "Destroy all symlinks for a package",
-                'version': "Print version info and exit"}
+    help_list = ["Usage: tadman [ARGUMENT] [...]\n", 
+                 "Arguments:", 
+                 "  build\t\tBuild a package from source code and install it",
+                 "  help\t\tPrint this help message and exit",
+                 "  install\tCreate symlinks for a built package",
+                 "  list\t\tList all built software packages",
+                 "  uninstall\tDestroy all symlinks for a package",
+                 "  version\tPrint version info and exit\n",
+                 "Copyright © 2016 Ted Moseley.\n", 
+                 "Free use of this software is granted under the terms of the", 
+                 "MIT License available at <https://opensource.org/licenses/MIT>."]
 
-    print("Usage: tadman [ARGUMENT] [...]\n\nArguments:")
+    help_string = ''
 
-    for argument in sorted(arg_dict):
-        print("    %s\t%s" % (argument, arg_dict[argument]))
+    for a_string in help_list:
+        help_string += '%s\n' % a_string
 
-    print()
-    print("Copyright © 2016 Ted Moseley. Free use of this software is")
-    print("granted under the terms of the MIT License")
-    print("<https://opensource.org/licenses/MIT>.")
+    print(help_string, end='')

@@ -48,7 +48,7 @@ def find_first(search_list, phrase):
 
     return found_occurance
 
-def get_options_list(path):
+def get_config_lists(path):
 
     """ This function runs the configure script in a package's source
     directory, and reads it's output to a string. From here, the
@@ -65,15 +65,21 @@ def get_options_list(path):
     output_string = subprocess.check_output([configure_file_path, '--help'])
     output_string = output_string.decode('utf-8')
 
-    option_list = output_string.split('\n')
+    output_list = output_string.split('\n')
 
-    start = find_first(option_list, "Optional Features:")
-    del option_list[:start + 1]
+    option_start = find_first(output_list, "Optional Features:")
+    #print(option_start)
+    option_end = find_first(output_list[option_start:], '') + option_start
+    #print(option_end)
+    option_list = output_list[option_start + 1: option_end]
 
-    end = find_first(option_list, "")
-    del option_list[end:]
+    install_start = find_first(output_list, "Fine tuning of the installation directories:")
+    #print(install_start)
+    install_end = find_first(output_list[install_start:], '') + install_start
+    #print(install_end)
+    install_dir_list = output_list[install_start + 1:install_end]
 
-    return option_list
+    return option_list, install_dir_list
 
 def option_to_title(an_option):
 
@@ -134,3 +140,20 @@ def option_processor(a_list):
             filtered_list.remove(item)
 
     return output_dict
+
+def install_flag_processor(a_list):
+
+    install_flag_dict = collections.OrderedDict()
+
+    for a_line in a_list:
+        flag, message = (a_line.lstrip()).split(' ', 1)
+        real_flag = flag[:-3]
+        description, default_path = (message.lstrip()).rsplit(' ', 1)
+
+        install_flag_dict[real_flag] = [description, default_path]
+
+    return install_flag_dict
+
+if __name__ == '__main__':
+    option_list, install_list = get_config_lists('/home/tedm1/Source/openbox-3.6.1')
+    a_dict = install_flag_processor(install_list)

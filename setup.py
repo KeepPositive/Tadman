@@ -11,32 +11,56 @@ def which(a_file):
             return test_path
 
     else:
-        return False
+        return None
+
+class InstallManpage(setuptools.Command):
+
+    description = 'Build and Install the manpage using asciidoctor'
+    user_options = []
+    boolean_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        input_file = "%s/docs/tadman.man.adoc" % os.getcwd()
+        output_file = "/usr/share/man/man8/tadman.8"
+
+        asciidoctor_path = which('asciidoctor')
+
+        if asciidoctor_path:
+            command = [asciidoctor_path, "--backend", "manpage", "--doctype",
+                       "manpage", "--out-file", output_file, input_file]
+
+            return_value = subprocess.check_call(command)
+
+            if return_value == 0:
+                print("Tadman manpage installed at %s" % output_file)
+            else:
+                print("Manpage failed to build!")
+        else:
+            print("Asciidoctor not found in path, please install it")
 
 setuptools.setup(
     # Package info
     name='tadman',
     description="Some package manager written in Python",
-    version = "0.1.0",
+    version = "0.1.1",
     # Author and Project info
     author = "Ted Moseley",
     author_email = "tmoseley1106@gmail.com",
     url = "https://github.com/KeepPositive/Tadman",
     # File/Directory info
     packages = ["tadman"],
-    scripts = ["bin/tadman-curses"])
-
-
-# Documentation related stuff
-input_file = "%s/docs/tadman.man.adoc" % os.getcwd()
-output_file = "/usr/share/man/man8/tadman.8"
-
-adoc = which('asciidoctor')
-
-if adoc:
-    subprocess.call([adoc, "--backend", "manpage", "--doctype", "manpage",
-                     "--out-file", output_file, input_file])
-
-    print("Tadman manpage installed at %s" % output_file)
-else:
-    print('%s not found in path, please install it' % a_file)
+    scripts = ["bin/tadman-curses"],
+    # Test related
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
+    # Docs related
+    cmdclass = {
+        'build_man': InstallManpage
+    }
+)

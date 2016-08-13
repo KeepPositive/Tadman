@@ -6,19 +6,6 @@ and be accessible from a terminal interface.
 # Standard
 import curses
 
-def box_generator(title, box_y, box_x, displace_y, displace_x):
-
-    """ This is a simple function which returns a curses-based box
-    object, in order to remove some clutter later on. It even adds
-    a cute title to the top of each box :D
-    """
-
-    new_box = curses.newwin(box_y, box_x, displace_y, displace_x)
-    new_box.box()
-    new_box.addstr(0, 1, " %s " % title.upper())
-
-    return new_box
-
 def line_wrapper(a_string, length):
 
     """ This function is responsible for 'wrapping' long strings. This
@@ -61,22 +48,31 @@ class MainInterface():
     functionality.
     """
 
-    def __init__(self, a_dict):
+    def __init__(self, opt_dict, inst_dict):
 
-        self.option_dict = a_dict
+        # Initialize some global variables
+        self.option_dict = opt_dict
         self.package_name = ''
         self.package_version = ''
         self.build_type = ''
-
+        self.window = 'build'
         self.option_list = []
+        self.install_list = []
         self.toggle_dict = {}
+        self.install_toggle = {}
+        self.install_dict = inst_dict
         self.options_avail = 0
+        self.install_avail = 0
 
         for item in self.option_dict:
             self.option_list.append(item)
             self.toggle_dict[item] = False
             self.options_avail += 1
 
+        for item in self.install_dict:
+            self.install_list.append(item)
+            self.install_toggle[item] = [False, len(item), '']
+            self.install_avail += 1
 
         # Initialize and prepare the main screen
         self.screen = curses.initscr()
@@ -94,16 +90,19 @@ class MainInterface():
 
         # Start initializing subwindows
         # Create a sub window that will contain the options list
-        self.option_box = box_generator('options', 20, 36, 2, 0)
+        self.option_box = curses.newwin(20, 36, 2, 0)
         # Create a pad window for the actual options list
         self.option_pad = curses.newpad(self.options_avail + 4, 36)
 
         # Create a sub window for package information
-        self.pack_info_box = box_generator('package info', 9, 44, 2, 36)
-
+        self.pack_info_box = curses.newwin(9, 44, 2, 36)
         # Create a sub window for option information
-        self.opt_info_box = box_generator('option info', 11, 44, 11, 36)
+        self.opt_info_box = curses.newwin(11, 44, 11, 36)
 
+        # A box for install flag options
+        self.install_flag_box = curses.newwin(20, 48, 2, 0)
+        # Make a pad for this scrollable list as well
+        self.install_pad = curses.newpad(self.install_avail + 4, 48)
 
     def init_package_info_entry(self):
 
@@ -113,6 +112,9 @@ class MainInterface():
         """
 
         # Add some title lines
+        self.pack_info_box.box()
+        self.pack_info_box.addstr(0, 1, 'Package Info')
+        # Add some titles
         self.pack_info_box.addstr(2, 2, "Package:", curses.A_BOLD)
         self.pack_info_box.addstr(3, 2, "Version:", curses.A_BOLD)
         self.pack_info_box.addstr(4, 2, 'DestDir:', curses.A_BOLD)
@@ -141,6 +143,19 @@ class MainInterface():
         self.pack_info_box.addstr(5, 11, output_folder)
         self.pack_info_box.addstr(6, 11, self.build_type)
         self.pack_info_box.refresh()
+
+    def refresh_install_flag_list(self):
+
+        offset_y = 0
+
+        for item in self.install_list:
+            if self.install_toggle[item][0]:
+                self.install_pad.addstr(offset_y, 0, "[X] {}".format(item))
+            else:
+                self.install_pad.addstr(offset_y, 0, "[ ] {}".format(item))
+            offset_y += 1
+
+        self.install_flag_box.refresh()
 
     def refresh_options_list(self):
 
@@ -202,10 +217,10 @@ class MainInterface():
         choosing options.
         """
 
-        self.screen.refresh()
         self.refresh_options_list()
         self.option_box.refresh()
         self.opt_info_box.refresh()
+        self.screen.refresh()
 
     def get_return_values(self):
 
@@ -236,14 +251,19 @@ class MainInterface():
         print(return_list)
         return return_list
 
-    def init_option_loop(self):
+    def run_option_loop(self):
 
         """ This method prepares the option choosing windows with
         titles and other indicators to benefit the user experience.
         Finally, it refreshes all of the necessary windows.
         """
+        self.pack_info_box.box()
+        self.pack_info_box.addstr(0, 1, 'Package Info')
+        self.pack_info_box.refresh()
 
         # Set up the option info box for feature options
+        self.opt_info_box.box()
+        self.opt_info_box.addstr(0, 1, 'Option Info')
         self.opt_info_box.addstr(2, 2, "Option index:", curses.A_BOLD)
         self.opt_info_box.addstr(3, 2, "Flag:", curses.A_BOLD)
         self.opt_info_box.addstr(4, 2, "Help Message:", curses.A_BOLD)
@@ -254,19 +274,17 @@ class MainInterface():
         # Initialize the info in the option info box
         self.refresh_option_info_box(0)
         self.refresh_option_windows()
+        self.option_box.box()
+        self.option_box.addstr(0, 1, 'Option List')
+        self.option_box.refresh()
         self.option_pad.refresh(0, 0, 4, 2, 19, 34)
         # Move the cursor to the start of the options list
         self.screen.move(4, 3)
 
-    def run_option_loop(self):
-
-        """ This is the option loop. It is in charge of controlling
-        the cursors position and the selection of items within the
-        option interface.
-        """
-
         key = ''
-        exit_interface = True
+
+        exit_main = False
+        build_package = False
 
         pad_offset = 0
         window_offset = 4
@@ -274,18 +292,24 @@ class MainInterface():
         maximum_offset = self.options_avail - 16
         maximum_y = self.options_avail + 3
         # Read incoming keypresses until quit or execute
-        while exit_interface:
+        while not exit_main:
 
             key = self.screen.getch()
             current_y, current_x = self.screen.getyx()
             current_index = current_y - index_offset
 
             # When 'q'  or 'e' is pressed, close window
-            if key in [ord('e'), ord('q')]:
-                exit_interface = False
+            if key == ord('e'):
+                build_package = True
+                exit_main = True
+                break
+
+            elif key == ord('q'):
+                exit_main = True
+                break
 
             # When the up arrow is pressed, reduce y-value or scroll list up
-            if key == curses.KEY_UP:
+            elif key == curses.KEY_UP:
                 if current_y == 4 and pad_offset > 0:
                     pad_offset -= 1
                 elif current_y > 4:
@@ -308,7 +332,10 @@ class MainInterface():
                     pad_offset = maximum_offset
                 else:
                     current_y = self.options_avail + 3
-
+            # Change modes if over is hit
+            elif key == curses.KEY_RIGHT:
+                self.window = 'install'
+                break
 
             current_index = current_y + pad_offset - window_offset
 
@@ -341,23 +368,70 @@ class MainInterface():
             self.screen.move(current_y, current_x)
             self.screen.refresh()
 
-        curses.endwin()
+        return exit_main, build_package
 
-        # Return a value based on how the window was closed
-        if key == ord('q'):
-            return False
-        elif key == ord('e'):
-            return True
+    def run_install_loop(self):
+
+        # Set up the menu
+        self.install_flag_box.box()
+        self.install_flag_box.addstr(0, 1, 'Install Flags')
+        self.install_flag_box.refresh()
+        self.refresh_install_flag_list()
+        self.install_pad.refresh(0, 0, 4, 2, 19, 34)
+        self.screen.move(4, 3)
+        self.screen.refresh()
+
+        key = ''
+
+        exit_main = False
+
+        while not exit_main:
+
+            key = self.screen.getch()
+            current_y, current_x = self.screen.getyx()
+            current_index = current_y - 4
+
+            build_package = False
+
+            if key == ord('q'):
+                print('exiting')
+                exit_main = True
+                break
+            elif key == curses.KEY_LEFT:
+                self.window = 'build'
+                break
+            elif key == ord('\n'):
+                current_item = self.install_list[current_index]
+                new_value = not self.install_toggle[current_item][0]
+                self.install_toggle[current_item][0] = new_value
+                offset_x = 6 + self.install_toggle[current_item][1]
+                offset_pad_x = offset_x - 2
+                if new_value:
+                    curses.echo()
+                    value = self.screen.getstr(current_y, offset_x, 27).decode('utf-8')
+                    curses.noecho()
+                    if value != '':
+                        self.install_pad.addstr(current_index, offset_pad_x, value)
+                else:
+                    self.install_pad.addstr(current_index, offset_pad_x, ' ' * 27)
+
+            self.refresh_install_flag_list()
+            self.install_pad.refresh(0, 0, 4, 2, 19, 34)
+
+            self.screen.move(current_y, current_x)
+            self.screen.refresh()
+
+        return exit_main, build_package
 
 
-def main_loop(a_dict, name, version, build_type):
+def main_loop(a_dict, inst_dict, name, version, build_type):
 
     """ This is a simple function with the goal of making scripts that
     utilize this interface more clean. It sets all of the vital info,
     and runs all of the major loops available in a specific order.
     """
 
-    interface = MainInterface(a_dict)
+    interface = MainInterface(a_dict, inst_dict)
 
     interface.package_name = name
     interface.package_version = version
@@ -365,8 +439,15 @@ def main_loop(a_dict, name, version, build_type):
 
     interface.init_package_info_entry()
 
-    interface.init_option_loop()
-    build_package = interface.run_option_loop()
+    exit_main = False
+
+    while not exit_main:
+        if interface.window == 'build':
+            exit_main, build_package = interface.run_option_loop()
+        elif interface.window == 'install':
+            exit_main, build_package = interface.run_install_loop()
+
+    curses.endwin()
 
     if build_package:
         return interface.get_return_values()
