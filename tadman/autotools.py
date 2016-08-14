@@ -150,7 +150,7 @@ def install_flag_processor(a_list):
         real_flag = flag[:-3]
         description, default_path = (message.lstrip()).rsplit(' ', 1)
 
-        install_flag_dict[real_flag] = [description, default_path]
+        install_flag_dict[real_flag] = [description, default_path[1:-1]]
 
     return install_flag_dict
 

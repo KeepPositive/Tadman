@@ -138,6 +138,26 @@ def configure_maker(in_dict, in_list, mode):
 
     return option_list
 
+def configure_maker2(mode, install_list, option_list):
+
+    command_list = []
+
+    if mode == 'autotools':
+        command_list.append('./configure')
+        command_list.append('--prefix=/usr')
+
+    elif mode == 'cmake':
+        command_list.append('cmake')
+        command_list.append('-DCMAKE_INSTALL_PREFIX=/usr')
+
+    for install_flag in install_list:
+        command_list.append(install_flag)
+
+    for option_flag in option_list:
+        command_list.append(option_flag)
+
+    return command_list
+
 def build_package_source(a_path, output_directory, configure_command):
 
     """ This function runs some simple commands in order to configure

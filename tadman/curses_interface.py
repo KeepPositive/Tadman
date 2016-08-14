@@ -100,9 +100,10 @@ class MainInterface():
         self.opt_info_box = curses.newwin(11, 44, 11, 36)
 
         # A box for install flag options
-        self.install_flag_box = curses.newwin(20, 48, 2, 0)
+        self.install_flag_box = curses.newwin(20, 36, 2, 0)
         # Make a pad for this scrollable list as well
-        self.install_pad = curses.newpad(self.install_avail + 4, 48)
+        self.install_pad = curses.newpad(self.install_avail + 4, 36)
+        self.install_info = curses.newwin(11, 44, 11, 36)
 
     def init_package_info_entry(self):
 
@@ -150,9 +151,9 @@ class MainInterface():
 
         for item in self.install_list:
             if self.install_toggle[item][0]:
-                self.install_pad.addstr(offset_y, 0, "[X] {}".format(item))
+                self.install_pad.addstr(offset_y, 0, "[X] {}".format(item[2:-1]))
             else:
-                self.install_pad.addstr(offset_y, 0, "[ ] {}".format(item))
+                self.install_pad.addstr(offset_y, 0, "[ ] {}".format(item[2:-1]))
             offset_y += 1
 
         self.install_flag_box.refresh()
@@ -210,6 +211,39 @@ class MainInterface():
 
         self.opt_info_box.refresh()
 
+    def refresh_install_info_box(self, index):
+
+        """ While moving the cursor up and down within the interface,
+        the option info box must be updated with information pertinent
+        to the highlighted item. In order to keep these all in track
+        and make the main_loop function slightly cleaner, this function
+        updates the information by itself. Prior to writing, it also
+        overwrites old info with whitespace.
+        """
+
+        current_item = self.install_list[index]
+
+        # Overwrite old info with spaces
+        self.install_info.addstr(2, 16, ' ' * 5)
+        self.install_info.addstr(3, 11, ' ' * 27)
+        self.install_info.addstr(4, 9, ' ' * 27)
+
+        for line_y in [6, 7]:
+            self.install_info.addstr(line_y, 2, ' ' * 40)
+
+        # Gather and print out new information
+        explaination, default_path = self.install_dict[current_item]
+        pretty_index = str(index + 1).zfill(2)
+
+        self.install_info.addstr(2, 16,
+                                 "%s/%i" % (pretty_index, self.install_avail))
+        self.install_info.addstr(3, 11, default_path)
+        self.install_info.addstr(4, 9, self.install_toggle[current_item][2])
+        self.install_info.addstr(6, 1, explaination)
+
+        self.install_info.refresh()
+
+
     def refresh_option_windows(self):
 
         """ This method is pretty self-explanitory. It simply
@@ -222,33 +256,28 @@ class MainInterface():
         self.opt_info_box.refresh()
         self.screen.refresh()
 
-    def get_return_values(self):
-
-        """ This function simple returns all of the useful user input
-        that was gathered by the interface.
-
-        This input is returned in a list as follows:
-
-        [package_name, package_version, [indexes of options chosen]]
-        """
+    def get_more_return_values(self):
 
         return_list = []
+        option_list = []
+        install_list = []
 
         for string in [self.package_name, self.package_version]:
-            if isinstance(string, bytes):
-                return_list.append(string.decode('utf-8'))
-            else:
-                return_list.append(string)
-
-        index_list = []
+            return_list.append(string)
 
         for item in self.toggle_dict:
             if self.toggle_dict[item]:
-                index_list.append(self.option_list.index(item))
+                option_list.append(self.option_dict[item][0])
 
-        return_list.append(sorted(index_list, key=int))
-        # Return a version of the list that is sorted by value
-        print(return_list)
+        return_list.append(option_list)
+
+        for item in self.install_toggle:
+            if self.install_toggle[item][0]:
+                full_flag = "%s%s" % (item, self.install_toggle[item][2])
+                install_list.append(full_flag)
+
+        return_list.append(install_list)
+
         return return_list
 
     def run_option_loop(self):
@@ -268,6 +297,7 @@ class MainInterface():
         self.opt_info_box.addstr(3, 2, "Flag:", curses.A_BOLD)
         self.opt_info_box.addstr(4, 2, "Help Message:", curses.A_BOLD)
         # If there are more options than available, indicate it
+        self.option_box.addstr(1, 13, ' ' * 8)
         if self.options_avail > 15:
             self.option_box.addstr(18, 13, "▼ More ▼", curses.A_BOLD)
 
@@ -378,6 +408,15 @@ class MainInterface():
         self.install_flag_box.refresh()
         self.refresh_install_flag_list()
         self.install_pad.refresh(0, 0, 4, 2, 19, 34)
+
+        self.install_info.box()
+        self.install_info.addstr(0, 1, 'Install Flag Info')
+        self.install_info.addstr(2, 2, 'Option Index: ', curses.A_BOLD)
+        self.install_info.addstr(3, 2, 'Default: ', curses.A_BOLD)
+        self.install_info.addstr(4, 2, 'Value: ', curses.A_BOLD)
+        self.install_info.addstr(5, 2, 'Explaination: ', curses.A_BOLD)
+        self.refresh_install_info_box(0)
+
         self.screen.move(4, 3)
         self.screen.refresh()
 
@@ -385,38 +424,59 @@ class MainInterface():
 
         exit_main = False
 
+        pad_offset = 0
+        window_offset = 4
+        index_offset = window_offset + pad_offset
+        maximum_offset = self.options_avail - 16
+        maximum_y = self.options_avail + 3
+
         while not exit_main:
 
             key = self.screen.getch()
             current_y, current_x = self.screen.getyx()
-            current_index = current_y - 4
-
+            current_index = current_y + pad_offset - window_offset
             build_package = False
 
-            if key == ord('q'):
+            if key == ord('e'):
+                build_package = True
+                exit_main = True
+                break
+            elif key == ord('q'):
                 print('exiting')
                 exit_main = True
                 break
             elif key == curses.KEY_LEFT:
                 self.window = 'build'
                 break
+            elif key == curses.KEY_UP:
+                if current_y == 4 and pad_offset > 0:
+                    pad_offset -= 1
+                elif current_y > 4:
+                    current_y -= 1
+            elif key == curses.KEY_DOWN:
+                if current_y == 19 and pad_offset < maximum_offset:
+                    pad_offset += 1
+                elif current_y < 19 and current_y < maximum_y:
+                    current_y += 1
             elif key == ord('\n'):
                 current_item = self.install_list[current_index]
                 new_value = not self.install_toggle[current_item][0]
                 self.install_toggle[current_item][0] = new_value
-                offset_x = 6 + self.install_toggle[current_item][1]
-                offset_pad_x = offset_x - 2
+                offset_x = 6 + len(current_item)
                 if new_value:
                     curses.echo()
-                    value = self.screen.getstr(current_y, offset_x, 27).decode('utf-8')
+                    value = self.install_info.getstr(4, 9, 30).decode('utf-8')
                     curses.noecho()
                     if value != '':
-                        self.install_pad.addstr(current_index, offset_pad_x, value)
+                        self.install_toggle[current_item][2] = value
                 else:
-                    self.install_pad.addstr(current_index, offset_pad_x, ' ' * 27)
+                    self.install_toggle[current_item][2] = ''
 
+            current_index = current_y + pad_offset - window_offset
+
+            self.refresh_install_info_box(current_index)
             self.refresh_install_flag_list()
-            self.install_pad.refresh(0, 0, 4, 2, 19, 34)
+            self.install_pad.refresh(pad_offset, 0, 4, 2, 19, 34)
 
             self.screen.move(current_y, current_x)
             self.screen.refresh()
@@ -450,6 +510,6 @@ def main_loop(a_dict, inst_dict, name, version, build_type):
     curses.endwin()
 
     if build_package:
-        return interface.get_return_values()
+        return interface.get_more_return_values()
     else:
         return False
