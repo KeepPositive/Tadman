@@ -89,7 +89,12 @@ def get_clean_bool_option(a_string):
     return option
 
 def get_clean_path_option(a_string):
+    """ Typically install flags are shown as 'flag:PATH=value', so
+    function splits the two, and removes the :PATH portion.
 
+    This function returns a tuple consisting of the install flag and
+    the default value that is set for it.
+    """
     option, default = a_string.split('=')
     option = option[:-5]
 
@@ -104,7 +109,7 @@ def option_processor(a_list):
     This function returns a processed list of options, with each item
     formatted as:
 
-        [title, cli_option, help_message]
+        title: [cli_option, help_message]
 
     Note: the cli_option still needs a 'YES' or 'NO' appended to end for it
     to work properly.
@@ -117,6 +122,7 @@ def option_processor(a_list):
         option_title = get_option_title(a_pair[1])
         if option_title[:5] == 'Cmake':
             option_title = option_title[6:]
+
         help_message = a_pair[0].lstrip('//')
         option_flag = "%s=" % get_clean_bool_option(a_pair[1])
 
@@ -126,6 +132,17 @@ def option_processor(a_list):
 
 def install_flag_processor(a_list):
 
+    """ This function deals with turning the install flag options into
+    a nicely formatted dictionary. This requires modifying the
+    raw_flag, but it is easily changed back later on after the user
+    enters information using the GUI.
+
+    This function returns a dictionary with the contents in the format
+    of:
+
+        modified_flag: [description, default_value]
+
+    """
     processed_dictionary = collections.OrderedDict()
 
     for a_pair in a_list:
@@ -140,12 +157,3 @@ def install_flag_processor(a_list):
         processed_dictionary[install_title] = [description, default_path]
 
     return processed_dictionary
-
-if __name__ == '__main__':
-    option_list, install_list = get_options_list('/home/tedm1/Source/tint2')
-    option_dict = option_processor(option_list)
-    install_dict = install_flag_processor(install_list)
-
-    print(option_dict)
-    print()
-    print(install_dict)

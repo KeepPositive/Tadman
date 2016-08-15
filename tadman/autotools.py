@@ -52,13 +52,15 @@ def get_config_lists(path):
 
     """ This function runs the configure script in a package's source
     directory, and reads it's output to a string. From here, the
-    string is broken up into a list of many strings by cutting at
-    newline characters. Finally, it find where all of the Optional
-    Features are listed, and filters out all of the other gibberish.
+    string is broken up into a few different lists, made up of many
+    strings. These lists are created by finding a unique header within
+    the configure string, and then placing all of the important
+    options into a single dictionary.
 
-    This function returns a list containing all of the option flags,
-    along with their brief help messages inside of strings. The output
-    is generally sent directly to the option_processor function below.
+    This function returns a list containing sub-lists made up of the
+    option flags, along with their brief help messages inside of
+    strings. The output is generally sent directly to the
+    option_processor function below.
     """
 
     configure_file_path = "%s/configure" % path
@@ -68,15 +70,11 @@ def get_config_lists(path):
     output_list = output_string.split('\n')
 
     option_start = find_first(output_list, "Optional Features:")
-    #print(option_start)
     option_end = find_first(output_list[option_start:], '') + option_start
-    #print(option_end)
     option_list = output_list[option_start + 1: option_end]
 
     install_start = find_first(output_list, "Fine tuning of the installation directories:")
-    #print(install_start)
     install_end = find_first(output_list[install_start:], '') + install_start
-    #print(install_end)
     install_dir_list = output_list[install_start + 1:install_end]
 
     return option_list, install_dir_list
@@ -95,14 +93,15 @@ def option_to_title(an_option):
 
 def option_processor(a_list):
 
-    """ This is kinda like the main function of the script. It essentially
-    uses all the functions above in a kinda smart way to clean up all of
-    the lines from autotools_config_write.
+    """ This function turns the list of sub-lists from
+    get_config_lists, and turns them into a nicely formatted and
+    ordered dictionary contain elements which will later be used by a
+    GUI.
 
     This function returns a processed (Ordered) dictionary containing
     options in the format of:
 
-        title: [option_flag, help_message]
+        title: [raw_option_flag, help_message]
     """
 
     filtered_list = []
@@ -146,6 +145,15 @@ def option_processor(a_list):
 
 def install_flag_processor(a_list):
 
+    """ Similar to the function above, this functions takes the
+    option flags specific to directories where programs will be
+    installed.
+
+    This function returns an ordered dictionary containing install
+    flags in the format of:
+
+        raw_flag: [description, default_value]
+    """
     install_flag_dict = collections.OrderedDict()
 
     for a_line in a_list:
@@ -156,7 +164,3 @@ def install_flag_processor(a_list):
         install_flag_dict[real_flag] = [description, default_path[1:-1]]
 
     return install_flag_dict
-
-if __name__ == '__main__':
-    option_list, install_list = get_config_lists('/home/tedm1/Source/openbox-3.6.1')
-    a_dict = install_flag_processor(install_list)

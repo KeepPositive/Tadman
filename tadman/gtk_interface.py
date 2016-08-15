@@ -1,7 +1,10 @@
 """ Welcome to the GTK+3 GUI interface for the Tadman package
-manager! I'm really proud with how this is all turning out. But there
-are a few tidbits I would like to improve still, like searching, and adding
-values to options with an equals at the end.
+manager! I'm really proud with how this is all turning out. But for
+the time being, this interface will not be updated until some interest
+is shown in having one.
+
+NOTE: This does NOT work with the current version of Tadman. It is
+here for historical and future purposes.
 """
 
 # Dependencies

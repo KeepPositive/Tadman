@@ -288,6 +288,12 @@ class MainInterface():
 
     def get_return_values(self):
 
+        """ This function returns all of the valuable information
+        gathered by the GUI in the format of:
+
+        [package_name, package_version, [optional_features], [install_flags]]
+        """
+
         return_list = []
         option_list = []
         install_list = []
@@ -317,10 +323,10 @@ class MainInterface():
 
     def run_option_loop(self):
 
-        """ This method prepares the option choosing windows with
-        titles and other indicators to benefit the user experience.
-        Finally, it refreshes all of the necessary windows.
+        """ This loop allows the user to interact with the optional
+        feature list and turn them on.
         """
+
         self.pack_info_box.box()
         self.pack_info_box.addstr(0, 1, 'Package Info')
         self.pack_info_box.refresh()
@@ -436,6 +442,11 @@ class MainInterface():
         return exit_main, build_package
 
     def run_install_loop(self):
+
+        """ This run loop is where the user is able to choose where
+        certain things will be installed using install flags like
+        '--mandir=' and things of that sort.
+        """
 
         # Set up the menu
         self.install_flag_box.box()
@@ -556,8 +567,6 @@ def main_loop(a_dict, inst_dict, name, version, build_type):
     curses.endwin()
 
     if build_package:
-        print(interface.get_more_return_values())
-        return interface.get_more_return_values()
-        return False
+        return interface.get_return_values()
     else:
         return False
