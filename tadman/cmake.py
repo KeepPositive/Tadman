@@ -1,5 +1,4 @@
-""" Welcome to Tadman's CMake script
-"""
+""" Welcome to Tadman's CMake script"""
 
 # Standard
 import collections
@@ -17,7 +16,7 @@ def get_options_list(a_path):
     If this folder already exists, it is emptied first.
     """
 
-    cmake_cache_path = "%s/CMakeCache.txt" % a_path
+    cmake_cache_path = "%s/tadman_build/CMakeCache.txt" % a_path
     cmake_build_dir = "%s/tadman_build" % a_path
 
     if not os.path.isfile(cmake_cache_path):
@@ -33,6 +32,7 @@ def get_options_list(a_path):
 
     cache_list = []
     option_list = []
+    install_list = []
 
     cache_file = open(cmake_cache_path, 'r')
 
@@ -43,11 +43,22 @@ def get_options_list(a_path):
 
     for index in range(cache_lines - 1):
         a_line = cache_list[index]
-        if 'BOOL=ON' in a_line or 'BOOL=OFF' in a_line:
-            message_line = cache_list[index - 1]
-            option_list.append([message_line[:-1], a_line[:-1]])
 
-    return option_list
+        for indicator in [':BOOL=', ':PATH=']:
+            if indicator in a_line:
+                if cache_list[index - 1][2] == ' ':
+                    line_one = cache_list[index - 2][:-1]
+                    line_two = cache_list[index - 1][:-1]
+                    message_line = "{}{}".format(line_one, line_two[2:])
+                else:
+                    message_line = cache_list[index - 1][:-1]
+
+                if 'BOOL=ON' in a_line or 'BOOL=OFF' in a_line:
+                    option_list.append([message_line, a_line])
+                elif ':PATH' in a_line:
+                    install_list.append([message_line, a_line])
+
+    return option_list, install_list
 
 def get_option_title(a_string):
 
@@ -64,7 +75,7 @@ def get_option_title(a_string):
 
     return option_name
 
-def get_clean_cli_option(a_string):
+def get_clean_bool_option(a_string):
 
     """ This function removes the 'YES\n' or 'NO\n' from the end of the
     option so that it can be set differently later on.
@@ -72,10 +83,17 @@ def get_clean_cli_option(a_string):
     This function returns a revised option almost ready for CLI usage.
     """
 
-    option = (a_string).split('=')
-    option = "-D%s" % option[0]
+    option, _ = (a_string).split('=')
+    option = "-D{}".format(option)
 
     return option
+
+def get_clean_path_option(a_string):
+
+    option, default = a_string.split('=')
+    option = option[:-5]
+
+    return option, default
 
 def option_processor(a_list):
 
@@ -97,9 +115,37 @@ def option_processor(a_list):
     for a_pair in a_list:
 
         option_title = get_option_title(a_pair[1])
-        help_message = a_pair[0].lstrip('// ')
-        option_flag = "%s=" % get_clean_cli_option(a_pair[1])
+        if option_title[:5] == 'Cmake':
+            option_title = option_title[6:]
+        help_message = a_pair[0].lstrip('//')
+        option_flag = "%s=" % get_clean_bool_option(a_pair[1])
 
         processed_dictionary[option_title] = [option_flag, help_message]
 
     return processed_dictionary
+
+def install_flag_processor(a_list):
+
+    processed_dictionary = collections.OrderedDict()
+
+    for a_pair in a_list:
+
+        install_title, default_path = get_clean_path_option(a_pair[1])
+
+        if install_title == 'CMAKE_INSTALL_PREFIX':
+            continue
+
+        description = a_pair[0].lstrip('//')
+
+        processed_dictionary[install_title] = [description, default_path]
+
+    return processed_dictionary
+
+if __name__ == '__main__':
+    option_list, install_list = get_options_list('/home/tedm1/Source/tint2')
+    option_dict = option_processor(option_list)
+    install_dict = install_flag_processor(install_list)
+
+    print(option_dict)
+    print()
+    print(install_dict)

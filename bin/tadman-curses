@@ -60,8 +60,7 @@ elif mode == 'build':
                                                                  build_type)
     if interface:
         # Generate the options from the selection indexes
-        command = tadman.main.configure_maker(clean_dict, interface[2],
-                                              build_type)
+        command = tadman.main.configure_maker2(build_type, interface[2], interface[3])
         output_directory = "%s/%s-%s" % (INSTALL_PATH, interface[0],
                                          interface[1])
         # Finally, build the package

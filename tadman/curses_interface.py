@@ -5,6 +5,7 @@ and be accessible from a terminal interface.
 
 # Standard
 import curses
+import datetime
 
 def line_wrapper(a_string, length):
 
@@ -71,7 +72,7 @@ class MainInterface():
 
         for item in self.install_dict:
             self.install_list.append(item)
-            self.install_toggle[item] = [False, len(item), '']
+            self.install_toggle[item] = [False, '']
             self.install_avail += 1
 
         # Initialize and prepare the main screen
@@ -85,8 +86,8 @@ class MainInterface():
         self.screen.addstr(22, 10,
                            "Hit 'enter' to select items, 'q' to quit or 'e' to execute")
         # Add a small help message that will be covered up later
-        self.screen.addstr(12, 41, "NOTE: If no value is entered,")
-        self.screen.addstr(13, 41, "the default will be selected")
+        self.screen.addstr(14, 41, "NOTE: If no value is entered,")
+        self.screen.addstr(15, 41, "the default will be selected")
 
         # Start initializing subwindows
         # Create a sub window that will contain the options list
@@ -125,7 +126,19 @@ class MainInterface():
         # Now we begin the program
         self.screen.refresh()
         # Get some user input
+        default_pack =  "Default value: {}".format(self.package_name)
+        self.screen.addstr(12, 41, default_pack)
+        self.screen.refresh()
         pack_name = self.pack_info_box.getstr(2, 11, 27).decode('utf-8')
+
+        self.screen.addstr(12, 41, ' ' * 40)
+        if self.package_version == '':
+            time_now = datetime.datetime.now()
+            self.package_version = time_now.strftime('%y%m%d%H%M%S')
+
+        default_version = "Default value: {}".format(self.package_version)
+        self.screen.addstr(12, 41, default_version)
+        self.screen.refresh()
         pack_version = self.pack_info_box.getstr(3, 11, 27).decode('utf-8')
         # Disable the users ability to type freely
         curses.noecho()
@@ -150,10 +163,16 @@ class MainInterface():
         offset_y = 0
 
         for item in self.install_list:
+            if self.build_type == 'autotools':
+                display_item = item[2:-1]
+            elif self.build_type == 'cmake':
+                display_item = item.lower()
+
             if self.install_toggle[item][0]:
-                self.install_pad.addstr(offset_y, 0, "[X] {}".format(item[2:-1]))
+                self.install_pad.addstr(offset_y, 0, "[X] {}".format(display_item))
             else:
-                self.install_pad.addstr(offset_y, 0, "[ ] {}".format(item[2:-1]))
+                self.install_pad.addstr(offset_y, 0, "[ ] {}".format(display_item))
+
             offset_y += 1
 
         self.install_flag_box.refresh()
@@ -200,8 +219,13 @@ class MainInterface():
         wrapped_help_message = line_wrapper(original_help_message, 40)
 
         pretty_index = str(index + 1).zfill(2)
+        pretty_total = str(self.options_avail).zfill(2)
         self.opt_info_box.addstr(2, 16,
-                                 "%s/%i" % (pretty_index, self.options_avail))
+                                 "%s/%s" % (pretty_index, pretty_total))
+
+        if self.build_type == 'cmake':
+            option_flag = option_flag[2:-6]
+
         self.opt_info_box.addstr(3, 8, option_flag)
 
         message_height = 5
@@ -232,14 +256,20 @@ class MainInterface():
             self.install_info.addstr(line_y, 2, ' ' * 40)
 
         # Gather and print out new information
-        explaination, default_path = self.install_dict[current_item]
+        description, default_path = self.install_dict[current_item]
+        wrapped_description = line_wrapper(description, 40)
         pretty_index = str(index + 1).zfill(2)
+        pretty_total = str(self.install_avail).zfill(2)
 
         self.install_info.addstr(2, 16,
-                                 "%s/%i" % (pretty_index, self.install_avail))
+                                 "%s/%s" % (pretty_index, pretty_total))
         self.install_info.addstr(3, 11, default_path)
-        self.install_info.addstr(4, 9, self.install_toggle[current_item][2])
-        self.install_info.addstr(6, 1, explaination)
+        self.install_info.addstr(4, 9, self.install_toggle[current_item][1])
+
+        description_height = 6
+        for a_line in wrapped_description:
+            self.install_info.addstr(description_height, 2, a_line)
+            description_height += 1
 
         self.install_info.refresh()
 
@@ -256,7 +286,7 @@ class MainInterface():
         self.opt_info_box.refresh()
         self.screen.refresh()
 
-    def get_more_return_values(self):
+    def get_return_values(self):
 
         return_list = []
         option_list = []
@@ -271,9 +301,14 @@ class MainInterface():
 
         return_list.append(option_list)
 
+
         for item in self.install_toggle:
             if self.install_toggle[item][0]:
-                full_flag = "%s%s" % (item, self.install_toggle[item][2])
+                if self.build_type in ['autotools', 'autogen']:
+                    full_flag = "%s%s" % (item, self.install_toggle[item][1])
+                elif self.build_type == 'cmake':
+                    full_flag = "-D{}:PATH={}".format(item,
+                                                      self.install_toggle[item][1])
                 install_list.append(full_flag)
 
         return_list.append(install_list)
@@ -427,8 +462,8 @@ class MainInterface():
         pad_offset = 0
         window_offset = 4
         index_offset = window_offset + pad_offset
-        maximum_offset = self.options_avail - 16
-        maximum_y = self.options_avail + 3
+        maximum_offset = self.install_avail - 16
+        maximum_y = self.install_avail + 3
 
         while not exit_main:
 
@@ -468,9 +503,9 @@ class MainInterface():
                     value = self.install_info.getstr(4, 9, 30).decode('utf-8')
                     curses.noecho()
                     if value != '':
-                        self.install_toggle[current_item][2] = value
+                        self.install_toggle[current_item][1] = value
                 else:
-                    self.install_toggle[current_item][2] = ''
+                    self.install_toggle[current_item][1] = ''
 
             current_index = current_y + pad_offset - window_offset
 
@@ -478,11 +513,22 @@ class MainInterface():
             self.refresh_install_flag_list()
             self.install_pad.refresh(pad_offset, 0, 4, 2, 19, 34)
 
+            if pad_offset > 0:
+                self.option_box.addstr(1, 13, "▲ More ▲", curses.A_BOLD)
+            else:
+                self.option_box.addstr(1, 13, ' ' * 8)
+
+            if pad_offset < maximum_offset:
+                self.option_box.addstr(18, 13, "▼ More ▼", curses.A_BOLD)
+            else:
+                self.option_box.addstr(18, 13, ' ' * 8)
+
+            self.option_box.refresh()
+
             self.screen.move(current_y, current_x)
             self.screen.refresh()
 
         return exit_main, build_package
-
 
 def main_loop(a_dict, inst_dict, name, version, build_type):
 
@@ -510,6 +556,8 @@ def main_loop(a_dict, inst_dict, name, version, build_type):
     curses.endwin()
 
     if build_package:
+        print(interface.get_more_return_values())
         return interface.get_more_return_values()
+        return False
     else:
         return False

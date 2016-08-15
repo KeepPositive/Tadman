@@ -132,6 +132,9 @@ def option_processor(a_list):
 
     for item in filtered_list:
         if isinstance(item, list):
+            if 'FEATURE' in item[0]:
+                continue
+
             title = option_to_title(item[0])
             opt_flag = item[0]
             help_message = item[1].capitalize()

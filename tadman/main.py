@@ -97,46 +97,15 @@ def get_package_info(a_path):
     build_type = find_build_type(a_path)
     # Get the available options based on what build system is found
     if build_type == 'autotools':
-        raw_list, install_list = autotools.get_config_lists(a_path)
-        clean_dict = autotools.option_processor(raw_list)
+        option_list, install_list = autotools.get_config_lists(a_path)
+        option_dict = autotools.option_processor(option_list)
         install_dict = autotools.install_flag_processor(install_list)
     elif build_type == 'cmake':
-        raw_list = cmake.get_options_list(a_path)
-        clean_dict = cmake.option_processor(raw_list)
+        option_list, install_list = cmake.get_options_list(a_path)
+        option_dict = cmake.option_processor(option_list)
+        install_dict = cmake.install_flag_processor(install_list)
 
-    return clean_dict, install_dict, package_name, package_version, build_type
-
-def configure_maker(in_dict, in_list, mode):
-
-    """ The configure_maker function creates a list of commands
-    and options flags based on the output of the GUI used to
-    select options.
-    """
-
-    configure_indexes = in_list
-    configure_list = []
-    option_list = []
-
-    for item in in_dict:
-        configure_list.append(item)
-
-    if mode == 'autotools':
-        option_list.append('./configure')
-        option_list.append('--prefix=/usr')
-
-    elif mode == 'cmake':
-        option_list.append('cmake')
-        option_list.append('-DCMAKE_INSTALL_PREFIX=/usr')
-
-    for index in configure_indexes:
-        option = in_dict[configure_list[index]][0]
-
-        if mode == 'cmake':
-            option = "%s%s" % (option, 'ON')
-
-        option_list.append(option)
-
-    return option_list
+    return option_dict, install_dict, package_name, package_version, build_type
 
 def configure_maker2(mode, install_list, option_list):
 
@@ -204,16 +173,16 @@ def print_help_message():
 
     """ This function prints a help message. Enough said."""
 
-    help_list = ["Usage: tadman [ARGUMENT] [...]\n", 
-                 "Arguments:", 
+    help_list = ["Usage: tadman [ARGUMENT] [...]\n",
+                 "Arguments:",
                  "  build\t\tBuild a package from source code and install it",
                  "  help\t\tPrint this help message and exit",
                  "  install\tCreate symlinks for a built package",
                  "  list\t\tList all built software packages",
                  "  uninstall\tDestroy all symlinks for a package",
                  "  version\tPrint version info and exit\n",
-                 "Copyright © 2016 Ted Moseley.\n", 
-                 "Free use of this software is granted under the terms of the", 
+                 "Copyright © 2016 Ted Moseley.\n",
+                 "Free use of this software is granted under the terms of the",
                  "MIT License available at <https://opensource.org/licenses/MIT>."]
 
     help_string = ''
