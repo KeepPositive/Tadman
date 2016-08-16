@@ -1,6 +1,9 @@
-""" Welcome to the Tadman ncurses interface. It's goal is to have all
-the functionality of the GTK+ version, but use very few dependencies
-and be accessible from a terminal interface.
+""" Welcome to the Tadman ncurses interface. It's original goal was
+to have all the functionality of the GTK+ version, but use fewer
+dependencies and be accessible from a terminal interface.
+
+Now, this interface is the main interface of the project. The GTK+
+variant will be updated later on if anyone shows interest in using it.
 """
 
 # Standard
@@ -160,6 +163,10 @@ class MainInterface():
 
     def refresh_install_flag_list(self):
 
+        """ When the user selects a flag, an X will appear. This works
+        because of this function.
+        """
+
         offset_y = 0
 
         for item in self.install_list:
@@ -187,10 +194,21 @@ class MainInterface():
         offset_y = 0
         # For each item, print an X or not depending on the current state
         for item in self.option_list:
-            if self.toggle_dict[item]:
-                self.option_pad.addstr(offset_y, 0, "[X] %s" % item)
+            value = self.toggle_dict[item]
+            if value:
+                if value == True:
+                    character = 'X'
+                    self.option_pad.addstr(offset_y, 0, "[X] %s" % item)
+                elif value == 'ON':
+                    character = 'Y'
+                elif value == 'OFF':
+                    character = 'N'
             else:
-                self.option_pad.addstr(offset_y, 0, "[ ] %s" % item)
+                character = ' '
+
+            display = "[{}] {}".format(character, item)
+            self.option_pad.addstr(offset_y, 0, display)
+
             offset_y += 1
 
         self.option_box.refresh()
@@ -302,24 +320,27 @@ class MainInterface():
             return_list.append(string)
 
         for item in self.toggle_dict:
-            if self.toggle_dict[item]:
-                option_list.append(self.option_dict[item][0])
-
-        return_list.append(option_list)
-
+            flag = self.option_dict[item][0]
+            if self.build_type in ['autotools', 'autogen']:
+                 option_list.append(flag)
+            elif self.build_type == 'cmake':
+                value = self.toggle_dict[item]
+                if value:
+                    option_flag = "{}{}".format(flag, value)
+                    option_list.append(option_flag)
 
         for item in self.install_toggle:
             if self.install_toggle[item][0]:
+                value = self.install_toggle[item][1]
                 if self.build_type in ['autotools', 'autogen']:
-                    full_flag = "%s%s" % (item, self.install_toggle[item][1])
+                    full_flag = "{}{}".format(item, value)
                 elif self.build_type == 'cmake':
-                    full_flag = "-D{}:PATH={}".format(item,
-                                                      self.install_toggle[item][1])
+                    full_flag = "-D{}:PATH={}".format(item, value)
+
                 install_list.append(full_flag)
 
-        return_list.append(install_list)
-
-        return return_list
+        return [self.package_name, self.package_version, option_list,
+                install_list]
 
     def run_option_loop(self):
 
@@ -412,11 +433,22 @@ class MainInterface():
 
             #  If 'enter' is pressed, add an X to the option by altering a
             # dictionary and refreshing the interface
-            if key == ord('\n'):
+            if key in [ord('y'), ord('n'), ord('\n')]:
                 current_item = self.option_list[current_index]
-                new_value = not self.toggle_dict[current_item]
-                self.toggle_dict[current_item] = new_value
+                #print("KEYS")
+                if self.build_type in ['autotools', 'autogen']:
+                    if key == ord('\n'):
+                        new_value = not self.toggle_dict[current_item]
 
+                elif self.build_type == 'cmake':
+                    if key == ord('y'):
+                        new_value = 'ON'
+                    elif key == ord('n'):
+                        new_value = 'OFF'
+                    elif key == ord('\n'):
+                        new_value = False
+
+                self.toggle_dict[current_item] = new_value
                 self.refresh_options_list()
 
             self.option_pad.refresh(pad_offset, 0, 4, 2, 19, 34)
@@ -568,5 +600,7 @@ def main_loop(a_dict, inst_dict, name, version, build_type):
 
     if build_package:
         return interface.get_return_values()
+        #print(interface.get_return_values())
+        #return False
     else:
         return False

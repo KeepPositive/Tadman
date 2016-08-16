@@ -8,5 +8,3 @@ dist/
 .eggs/
 *.egg-info/
 .cache/
-
-enter_virtualenv.sh

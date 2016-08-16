@@ -139,9 +139,14 @@ def build_package_source(a_path, output_directory, configure_command):
     # Run the configuration command with options
     subprocess.run(configure_command)
     # Build the sources
-    subprocess.run(['make', '-j', '4'])
+    build = subprocess.run(['make', '-j', '4'])
     # Install it in the Tadman directory
-    subprocess.run(['make', "DESTDIR=%s" % output_directory, 'install'])
+    install = subprocess.run(['make', "DESTDIR=%s" % output_directory, 'install'])
+
+    if build.returncode == 0 and install.returncode == 0:
+        return True
+    else:
+        return False
 
 def find_link_path(root_dir, name_or_path):
 

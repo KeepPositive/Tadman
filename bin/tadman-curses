@@ -29,7 +29,7 @@ if mode == 'help':
     tadman.main.print_help_message()
 
 elif mode == 'version':
-    print("Tadman 0.1.0")
+    print("Tadman 0.1.2")
 
 elif mode == 'list':
     try:
@@ -64,10 +64,14 @@ elif mode == 'build':
         output_directory = "%s/%s-%s" % (INSTALL_PATH, interface[0],
                                          interface[1])
         # Finally, build the package
-        tadman.main.build_package_source(package_path, output_directory,
-                                         command)
-        if tadman.main.simple_prompt("Would you like to install this package?"):
-            tadman.linker.sym_farm(output_directory)
+        success = tadman.main.build_package_source(package_path,
+                                                   output_directory,
+                                                   command)
+        if success:
+            if tadman.main.simple_prompt("Would you like to install this package?"):
+                tadman.linker.sym_farm(output_directory)
+        else:
+            print("Build failed")
     else:
         print("Tadman exited")
 

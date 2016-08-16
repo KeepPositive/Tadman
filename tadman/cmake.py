@@ -90,7 +90,7 @@ def get_clean_bool_option(a_string):
 
 def get_clean_path_option(a_string):
     """ Typically install flags are shown as 'flag:PATH=value', so
-    function splits the two, and removes the :PATH portion.
+    this function splits the two, and removes the :PATH portion.
 
     This function returns a tuple consisting of the install flag and
     the default value that is set for it.

@@ -37,6 +37,7 @@ Though, there are several optional dependencies:
 * asciidoctor (to generate the manual page)
 * CMake (to build CMake-based projects)
 * pygobject and GTK+3 (to use the GTK+ 3 interface)
+* pytest (to run some tests)
 
 == Installation
 
