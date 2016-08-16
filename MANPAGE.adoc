@@ -1,6 +1,6 @@
 = tadman(8)
 Ted Moseley
-v0.1.0
+v0.1.2
 :manmanual: TADMAN
 :mansource: TADMAN
 
@@ -20,11 +20,12 @@ Tadman is a portable package manager which can run on any GNU/Linux based
 operating system. It is written in pure python3 and possesses very few
 dependencies.
 
-The idea is that Tadman acts as a wrapper for popular build systems. Currently,
-Tadman is able to build GNU Autotools and CMake based projects. It then
-installs the compiled sources in the '/usr/local/tadman' directory. Here,
-packages are placed within their own folders. The contents of these folders
-are then linked to the '/usr/bin' through a system of symlinks.
+The idea is that Tadman acts as a wrapper for popular build systems.
+Currently, Tadman is able to build GNU Autotools and CMake based projects.
+It then installs the compiled source code into the '/usr/local/tadman'
+directory. Here, packages are placed within their own folders. The
+contents of these folders are then linked to the '/usr/bin' through a
+system of symlinks.
 
 Similarly, Tadman can uninstall packages by removing all symlinks.
 

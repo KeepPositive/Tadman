@@ -85,9 +85,6 @@ class MainInterface():
         self.screen.keypad(1)
         # Add a title to the main screen
         self.screen.addstr(0, 1, "Tadman Package Manager", curses.A_UNDERLINE)
-        # Print a little help message
-        self.screen.addstr(22, 10,
-                           "Hit 'enter' to select items, 'q' to quit or 'e' to execute")
         # Add a small help message that will be covered up later
         self.screen.addstr(14, 41, "NOTE: If no value is entered,")
         self.screen.addstr(15, 41, "the default will be selected")
@@ -141,7 +138,6 @@ class MainInterface():
 
         default_version = "Default value: {}".format(self.package_version)
         self.screen.addstr(12, 41, default_version)
-        self.screen.refresh()
         pack_version = self.pack_info_box.getstr(3, 11, 27).decode('utf-8')
         # Disable the users ability to type freely
         curses.noecho()
@@ -160,6 +156,9 @@ class MainInterface():
         self.pack_info_box.addstr(5, 11, output_folder)
         self.pack_info_box.addstr(6, 11, self.build_type)
         self.pack_info_box.refresh()
+        # Print a little help message
+        self.screen.addstr(22, 30, "Hit '?' for help")
+        self.screen.refresh()
 
     def refresh_install_flag_list(self):
 
@@ -302,7 +301,16 @@ class MainInterface():
         self.refresh_options_list()
         self.option_box.refresh()
         self.opt_info_box.refresh()
+        self.pack_info_box.refresh()
         self.screen.refresh()
+
+    def refresh_install_windows(self):
+
+        """ Update all of the install windows. Duh."""
+
+        self.refresh_install_flag_list()
+        self.refresh_install_info_box()
+        self.pack_info_box.refresh()
 
     def get_return_values(self):
 
@@ -342,6 +350,73 @@ class MainInterface():
         return [self.package_name, self.package_version, option_list,
                 install_list]
 
+    def run_help_loop(self, previous_window):
+
+        # Create a help message box
+        help_box = curses.newwin(15, 70, 3, 5)
+        help_box.box()
+        help_box.addstr(0, 1, 'Option Help')
+        curses.curs_set(0)
+
+        help_dict = {
+                'General': [2, 2,
+                            [('q', 'Quit tadman'),
+                             ('e', 'Exec build w/ settings'),
+                             ('?', 'Open/Close help window')]],
+                'Selection': [7, 2,
+                              [('UP', 'Scroll up one'),
+                               ('DOWN', 'Scroll down one'),
+                               ('HOME', 'Scroll to top'),
+                               ('END', 'Scroll to bottom')]],
+                'Autotools/Install': [2, 36,
+                                      [('ENTER', 'Select/Deselect option')]],
+                'CMake Build': [5, 36,
+                                [('y', 'Activate feature'),
+                                 ('n', 'Disable feature'),
+                                 ('ENTER', 'Clear feature')]]
+        }
+
+        for item in help_dict:
+            y_set, x_set, sub_messages = help_dict[item]
+            y_offset = 1
+
+            help_box.addstr(y_set, x_set, item, curses.A_BOLD)
+
+            y_set += 1
+            x_set += 1
+
+            for subitem in sub_messages:
+                message_space = ' ' * (8 - len(subitem[0]))
+                message = "{}{}{}".format(subitem[0], message_space,
+                                          subitem[1])
+                help_box.addstr(y_set, x_set, message)
+                y_set += 1
+
+        help_box.refresh()
+
+        key = ''
+        exit_main = False
+        build_package = False
+
+        while True:
+
+            key = self.screen.getch()
+
+            if key == ord('?'):
+                break
+            elif key == ord('e'):
+                build_package = True
+                exit_main = True
+                break
+            elif key == ord('q'):
+                exit_main = True
+                break
+
+        curses.curs_set(1)
+        self.window = previous_window
+
+        return exit_main, build_package
+
     def run_option_loop(self):
 
         """ This loop allows the user to interact with the optional
@@ -366,6 +441,7 @@ class MainInterface():
         # Initialize the info in the option info box
         self.refresh_option_info_box(0)
         self.refresh_option_windows()
+        # Set up the box where options will be chosen
         self.option_box.box()
         self.option_box.addstr(0, 1, 'Option List')
         self.option_box.refresh()
@@ -377,7 +453,6 @@ class MainInterface():
 
         exit_main = False
         build_package = False
-
         pad_offset = 0
         window_offset = 4
         index_offset = window_offset + pad_offset
@@ -395,11 +470,12 @@ class MainInterface():
                 build_package = True
                 exit_main = True
                 break
-
             elif key == ord('q'):
                 exit_main = True
                 break
-
+            elif key == ord('?'):
+                self.window = 'build-help'
+                break
             # When the up arrow is pressed, reduce y-value or scroll list up
             elif key == curses.KEY_UP:
                 if current_y == 4 and pad_offset > 0:
@@ -422,9 +498,10 @@ class MainInterface():
                 if self.options_avail > 15:
                     current_y = 19
                     pad_offset = maximum_offset
+                    print('nim')
                 else:
                     current_y = self.options_avail + 3
-            # Change modes if over is hit
+            # Change modes if right is hit
             elif key == curses.KEY_RIGHT:
                 self.window = 'install'
                 break
@@ -479,6 +556,9 @@ class MainInterface():
         certain things will be installed using install flags like
         '--mandir=' and things of that sort.
         """
+        self.pack_info_box.box()
+        self.pack_info_box.addstr(0, 1, 'Package Info')
+        self.pack_info_box.refresh()
 
         # Set up the menu
         self.install_flag_box.box()
@@ -494,6 +574,10 @@ class MainInterface():
         self.install_info.addstr(4, 2, 'Value: ', curses.A_BOLD)
         self.install_info.addstr(5, 2, 'Explaination: ', curses.A_BOLD)
         self.refresh_install_info_box(0)
+
+        if self.install_avail > 15:
+            self.install_flag_box.addstr(18, 13, "▼ More ▼", curses.A_BOLD)
+            self.install_flag_box.refresh()
 
         self.screen.move(4, 3)
         self.screen.refresh()
@@ -522,6 +606,9 @@ class MainInterface():
             elif key == ord('q'):
                 print('exiting')
                 exit_main = True
+                break
+            elif key == ord('?'):
+                self.window = 'install-help'
                 break
             elif key == curses.KEY_LEFT:
                 self.window = 'build'
@@ -557,16 +644,16 @@ class MainInterface():
             self.install_pad.refresh(pad_offset, 0, 4, 2, 19, 34)
 
             if pad_offset > 0:
-                self.option_box.addstr(1, 13, "▲ More ▲", curses.A_BOLD)
+                self.install_flag_box.addstr(1, 13, "▲ More ▲", curses.A_BOLD)
             else:
-                self.option_box.addstr(1, 13, ' ' * 8)
+                self.install_flag_box.addstr(1, 13, ' ' * 8)
 
             if pad_offset < maximum_offset:
-                self.option_box.addstr(18, 13, "▼ More ▼", curses.A_BOLD)
+                self.install_flag_box.addstr(18, 13, "▼ More ▼", curses.A_BOLD)
             else:
-                self.option_box.addstr(18, 13, ' ' * 8)
+                self.install_flag_box.addstr(18, 13, ' ' * 8)
 
-            self.option_box.refresh()
+            self.install_flag_box.refresh()
 
             self.screen.move(current_y, current_x)
             self.screen.refresh()
@@ -595,12 +682,14 @@ def main_loop(a_dict, inst_dict, name, version, build_type):
             exit_main, build_package = interface.run_option_loop()
         elif interface.window == 'install':
             exit_main, build_package = interface.run_install_loop()
+        elif interface.window == 'build-help':
+            exit_main, build_package = interface.run_help_loop('build')
+        elif interface.window == 'install-help':
+            exit_main, build_package = interface.run_help_loop('install')
 
     curses.endwin()
 
     if build_package:
         return interface.get_return_values()
-        #print(interface.get_return_values())
-        #return False
     else:
         return False

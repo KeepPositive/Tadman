@@ -26,7 +26,7 @@ class InstallManpage(setuptools.Command):
         pass
 
     def run(self):
-        input_file = "%s/docs/tadman.man.adoc" % os.getcwd()
+        input_file = "%s/MANPAGE.adoc" % os.getcwd()
         output_file = "/usr/share/man/man8/tadman.8"
 
         asciidoctor_path = which('asciidoctor')
