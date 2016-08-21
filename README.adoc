@@ -1,6 +1,4 @@
-= Tadman
-
-__Some Package Manager Written in Python__
+= Tadman - __Some Package Manager Written in Python__
 
 == What It Does
 
