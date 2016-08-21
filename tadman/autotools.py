@@ -130,9 +130,14 @@ def option_processor(a_list):
             item.pop(2)
 
     for item in filtered_list:
+        # Ensure all items in the list are lists
         if isinstance(item, list):
+            # Skip the example flag i.e.:'--enable-FEATURE'
             if 'FEATURE' in item[0]:
                 continue
+            # If option ends with [=PKGS], get rid of the end
+            elif '[=PKGS]' in item[0]:
+                item[0] = item[0][:-7]
 
             title = option_to_title(item[0])
             opt_flag = item[0]

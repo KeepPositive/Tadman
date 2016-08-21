@@ -89,7 +89,6 @@ def digit_split(a_name):
     split_or_not = False
     split_index = 0
 
-    print(name_length - 1)
     while (index < (name_length - 1)) and (digit_count < 2):
         if a_name[index].isdigit():
             digit_count += 1
@@ -100,7 +99,6 @@ def digit_split(a_name):
                 split_or_not = True
                 break
 
-        print(index)
         index += 1
 
     if split_or_not:

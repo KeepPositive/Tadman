@@ -65,22 +65,6 @@ def list_package_contents(root_path, a_path):
 
             print(new_path)
 
-def find_build_type(a_path):
-
-    """ One can often find what build system is used by looking at the
-    files present in the main folder. This function does it
-    automagically and returns which build system it believes is used.
-    """
-
-    if os.path.isfile("%s/configure" % a_path):
-        build_type = 'autotools'
-    elif os.path.isfile("%s/CMakeLists.txt" % a_path):
-        build_type = 'cmake'
-    elif os.path.isfile("%s/autogen.sh" % a_path):
-        build_type = 'autogen'
-
-    return build_type
-
 def get_package_info(a_path):
 
     """ This function determines which build system is used by viewing
@@ -93,9 +77,15 @@ def get_package_info(a_path):
     # Get the name and version from the basename of the source path
     package_name, package_version = path_tools.name_version_split(a_path)
 
-    # Find out which build system is available
-    build_type = find_build_type(a_path)
-    # Get the available options based on what build system is found
+    # Determine the build system using key files
+    if os.path.isfile("%s/configure" % a_path):
+        build_type = 'autotools'
+    elif os.path.isfile("%s/CMakeLists.txt" % a_path):
+        build_type = 'cmake'
+    elif os.path.isfile("%s/autogen.sh" % a_path):
+        build_type = 'autogen'
+
+    # Get the available options based on what build system was found
     if build_type == 'autotools':
         option_list, install_list = autotools.get_config_lists(a_path)
         option_dict = autotools.option_processor(option_list)
@@ -104,10 +94,17 @@ def get_package_info(a_path):
         option_list, install_list = cmake.get_options_list(a_path)
         option_dict = cmake.option_processor(option_list)
         install_dict = cmake.install_flag_processor(install_list)
+    elif build_type == 'autogen':
+        os.chdir(a_path)
+        subprocess.run(['./autogen.sh'])
+        option_list, install_list = autotools.get_config_lists(a_path)
+        option_dict = autotools.option_processor(option_list)
+        install_dict = autotools.install_flag_processor(install_list)
+        build_type = 'autotools'
 
     return option_dict, install_dict, package_name, package_version, build_type
 
-def configure_maker2(mode, install_list, option_list):
+def configure_maker(mode, install_list, option_list):
 
     command_list = []
 

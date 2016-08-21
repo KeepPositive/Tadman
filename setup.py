@@ -2,6 +2,18 @@ import os
 import setuptools
 import subprocess
 
+def get_version_number(a_file):
+    open_file = open(a_file)
+
+    for a_line in open_file:
+        if '__version__' in a_line:
+            split_list = a_line.split()
+            version_number = split_list[-1][1:-1]
+            break
+    open_file.close()
+
+    return version_number
+
 def which(a_file):
     for a_path in os.environ["PATH"].split(os.pathsep):
 
@@ -48,7 +60,7 @@ setuptools.setup(
     # Package info
     name='tadman',
     description="Some package manager written in Python",
-    version = "0.1.2",
+    version = get_version_number('./tadman/__init__.py'),
     # Author and Project info
     author = "Ted Moseley",
     author_email = "tmoseley1106@gmail.com",

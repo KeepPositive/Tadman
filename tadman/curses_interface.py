@@ -9,6 +9,7 @@ variant will be updated later on if anyone shows interest in using it.
 # Standard
 import curses
 import datetime
+import sys
 
 def line_wrapper(a_string, length):
 
@@ -78,8 +79,18 @@ class MainInterface():
             self.install_toggle[item] = [False, '']
             self.install_avail += 1
 
-        # Initialize and prepare the main screen
+        # Initalize the screen
         self.screen = curses.initscr()
+
+        # Check if screen is large enough
+        max_y, max_x = self.screen.getmaxyx()
+        if max_y < 24 or max_x < 80:
+            curses.endwin()
+            print("Terminal must be at least 24 rows by 80 columns")
+            print("It is currently {} rows by {} columns".format(max_y, max_x))
+            sys.exit(0)
+
+        # Prepare the main screen
         curses.echo()
         curses.cbreak()
         self.screen.keypad(1)
@@ -132,19 +143,20 @@ class MainInterface():
         pack_name = self.pack_info_box.getstr(2, 11, 27).decode('utf-8')
 
         self.screen.addstr(12, 41, ' ' * 40)
+        # If version number was found, default to a datetime string
         if self.package_version == '':
             time_now = datetime.datetime.now()
             self.package_version = time_now.strftime('%y%m%d%H%M%S')
 
         default_version = "Default value: {}".format(self.package_version)
         self.screen.addstr(12, 41, default_version)
+        self.screen.refresh()
         pack_version = self.pack_info_box.getstr(3, 11, 27).decode('utf-8')
         # Disable the users ability to type freely
         curses.noecho()
-        # If the line is left empty, display the default value
+        # If the line is left empty, set variable to the default value
         if pack_name:
             self.package_name = pack_name[:26]
-
         if pack_version:
             self.package_version = pack_version[:26]
 
@@ -330,7 +342,9 @@ class MainInterface():
         for item in self.toggle_dict:
             flag = self.option_dict[item][0]
             if self.build_type in ['autotools', 'autogen']:
-                 option_list.append(flag)
+                value = self.toggle_dict[item]
+                if value:
+                    option_list.append(flag)
             elif self.build_type == 'cmake':
                 value = self.toggle_dict[item]
                 if value:
@@ -353,27 +367,31 @@ class MainInterface():
     def run_help_loop(self, previous_window):
 
         # Create a help message box
-        help_box = curses.newwin(15, 70, 3, 5)
+        help_box = curses.newwin(15, 78, 4, 1)
         help_box.box()
-        help_box.addstr(0, 1, 'Option Help')
+        help_box.addstr(0, 1, ' Help ')
         curses.curs_set(0)
 
         help_dict = {
                 'General': [2, 2,
                             [('q', 'Quit tadman'),
                              ('e', 'Exec build w/ settings'),
-                             ('?', 'Open/Close help window')]],
-                'Selection': [7, 2,
+                             ('?', 'Open/Close help window'),
+                             ('ENTER', 'Select/Deselect option')]],
+                'Selection': [8, 2,
                               [('UP', 'Scroll up one'),
                                ('DOWN', 'Scroll down one'),
                                ('HOME', 'Scroll to top'),
                                ('END', 'Scroll to bottom')]],
-                'Autotools/Install': [2, 36,
-                                      [('ENTER', 'Select/Deselect option')]],
+                'Autotools Build': [2, 36,
+                                    [('RIGHT', 'Enter install flag select')]],
+                'Install Flags': [11, 36,
+                                  [('LEFT', 'Return to option selection')]],
                 'CMake Build': [5, 36,
                                 [('y', 'Activate feature'),
                                  ('n', 'Disable feature'),
-                                 ('ENTER', 'Clear feature')]]
+                                 ('ENTER', 'Clear feature'),
+                                 ('RIGHT', 'Enter install flag select')]]
         }
 
         for item in help_dict:
@@ -498,7 +516,6 @@ class MainInterface():
                 if self.options_avail > 15:
                     current_y = 19
                     pad_offset = maximum_offset
-                    print('nim')
                 else:
                     current_y = self.options_avail + 3
             # Change modes if right is hit

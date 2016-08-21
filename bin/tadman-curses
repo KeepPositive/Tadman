@@ -1,5 +1,8 @@
+#! /usr/bin/env python3
+
 """ This is the main script for the Tadman package manager. This script
-specifically utilizes the curses interface.
+specifically utilizes the curses interface, so that Tadman can remain
+'modular' so to speak.
 
 Note: Many functions used in this script are in the tadman.main module.
 """
@@ -9,38 +12,34 @@ import curses
 import os
 import sys
 # Scripts
-import tadman.curses_interface
-import tadman.main
-import tadman.path_tools
-import tadman.linker
+import tadman
+from tadman import curses_interface, linker, main, path_tools
 
 INSTALL_PATH = '/usr/local/tadman'
 
-arguments = sys.argv
-arg_length = len(arguments)
-
-if arg_length == 1:
-    tadman.main.print_help_message()
+if len(sys.argv) == 1:
+    main.print_help_message()
     sys.exit(1)
 else:
-     mode = arguments[1]
+     mode = sys.argv[1]
 
 if mode == 'help':
-    tadman.main.print_help_message()
+    main.print_help_message()
 
 elif mode == 'version':
-    print("Tadman 0.1.2")
+    print("Tadman {}".format(tadman.__version__))
 
 elif mode == 'list':
     try:
-        tadman.main.list_package_contents(INSTALL_PATH, arguments[2])
+        main.list_package_contents(INSTALL_PATH, sys.argv[2])
     except IndexError:
-        tadman.main.list_package_directory(INSTALL_PATH)
+        main.list_package_directory(INSTALL_PATH)
 
 elif mode == 'build':
     # Make sure a path to directory is available and exists
     try:
-        package_path = tadman.path_tools.last_slash_check(arguments[2])
+        input_path = path_tools.last_slash_check(sys.argv[2])
+        package_path = os.path.abspath(input_path)
         if not os.path.isdir(package_path):
             print("Invalid directory entered")
             sys.exit(0)
@@ -49,46 +48,48 @@ elif mode == 'build':
         sys.exit(0)
 
     # Ensure the user running the script is the root user
-    tadman.main.check_for_root()
+    main.check_for_root()
     # Get info from the package
-    package_info = tadman.main.get_package_info(package_path)
+    package_info = main.get_package_info(package_path)
     clean_dict, install_dict, package_name, package_version, build_type = package_info
     # Run the curses-based user interface using the info from above
-    interface = tadman.curses_interface.main_loop(clean_dict, install_dict,
-                                                                 package_name,
-                                                                 package_version,
-                                                                 build_type)
+    interface = curses_interface.main_loop(clean_dict, install_dict,
+                                           package_name, package_version,
+                                           build_type)
     if interface:
         # Generate the options from the selection indexes
-        command = tadman.main.configure_maker2(build_type, interface[2], interface[3])
-        output_directory = "%s/%s-%s" % (INSTALL_PATH, interface[0],
-                                         interface[1])
+        package_name, package_version, option_flags, install_flags = interface
+        command = main.configure_maker(build_type, option_flags, install_flags)
+        output_directory = "{}/{}-{}".format(INSTALL_PATH, package_name,
+                                             package_version)
         # Finally, build the package
-        success = tadman.main.build_package_source(package_path,
-                                                   output_directory,
-                                                   command)
-        if success:
-            if tadman.main.simple_prompt("Would you like to install this package?"):
-                tadman.linker.sym_farm(output_directory)
+        successful_build = main.build_package_source(package_path,
+                                                            output_directory,
+                                                            command)
+        if successful_build:
+            if main.simple_prompt("Would you like to install this package?"):
+                linker.sym_farm(output_directory)
         else:
-            print("Build failed")
+            print("Build failed, please read above output thoroughly")
     else:
         print("Tadman exited")
 
 elif mode in ['install', 'uninstall']:
+    # Ensure the user running the script is the root user
+    main.check_for_root()
     # Make sure a path to directory is available and exists
     try:
-        link_to_path = tadman.path_tools.last_slash_check(arguments[2])
+        link_to_path = path_tools.last_slash_check(sys.argv[2])
     except IndexError:
         print("You are missing the PATH_OR_NAME argument")
         sys.exit(0)
     else:
-        link_to_path = tadman.main.find_link_path(INSTALL_PATH, link_to_path)
+        link_to_path = main.find_link_path(INSTALL_PATH, link_to_path)
 
     print(link_to_path)
     if mode == 'install':
-        tadman.linker.sym_farm(link_to_path)
+        linker.sym_farm(link_to_path)
     elif mode == 'uninstall':
-        tadman.linker.sym_reap(link_to_path)
-        if tadman.main.simple_prompt("Would you like to delete this package?"):
-            tadman.path_tools.remove_empty_folders(link_to_path)
+        linker.sym_reap(link_to_path)
+        if main.simple_prompt("Would you like to remove this package?"):
+            path_tools.remove_empty_folders(link_to_path)
