@@ -8,7 +8,9 @@ package in the '/usr/local/tadman/PACKAGE-NAME' and symlinks the files to your
 root directory where they belong, similiar to GNU Stow. Uninstalling an old
 program is as easy as running a single command:
 
-``$ sudo tadman-curses uninstall PACKAGE-NAME``
+----
+$ sudo tadman-curses uninstall PACKAGE-NAME
+----
 
 == What It Does Not Do
 
@@ -21,7 +23,9 @@ Rather, it gives the user direct access to the world's largest and most
 up-to-date software library: the internet (and especially GitHub). Just find
 some source code, and install it using a single command:
 
-``$ sudo tadman-curses build PACKAGE-PATH``
+----
+$ sudo tadman-curses build PACKAGE-PATH``
+----
 
 == Dependencies
 
@@ -42,11 +46,11 @@ Though, there are several optional dependencies:
 Tadman can be installed using Git and Setuptools using the following commands
 on a GNU/Linux system:
 
-```
+----
 $ git clone https://github.com/KeepPositive/Tadman.git
 $ cd Tadman
 # python3 setup.py install
-```
+----
 
 You should now have an executable named ``tadman-curses`` in your path.
 
@@ -56,7 +60,9 @@ Tadman should make building source code packages easier. Try it out by
 downloading some source code that uses autotools or CMake, and then run the
 following:
 
-``$ python3 tadman-curses build [PATH]``
+----
+$ python3 tadman-curses build [PATH]
+----
 
 A curses-based GUI will open, and prompt you for the package name and version
 (necessary for better book-keeping of the installation). Next, an options list
