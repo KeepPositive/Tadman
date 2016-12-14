@@ -10,41 +10,7 @@ variant will be updated later on if anyone shows interest in using it.
 import curses
 import datetime
 import sys
-
-def line_wrapper(a_string, length):
-
-    """ This function is responsible for 'wrapping' long strings. This
-    is achieved by setting a desire length, and then finding the space
-    character nearest to said length. Strings of the desire length are
-    then added to a dictionary.
-
-    The return value of this function is a list containing multiple
-    strings.
-    """
-
-    string_list = [a_string]
-    count = 0
-
-    while count < len(string_list):
-        for string in string_list:
-
-            str_length = len(string)
-
-            if str_length > length and ' ' in string[:length]:
-                for index in reversed(range(length)):
-                    if string[index] == ' ':
-                        str_split = string[:index]
-                        str_remainder = string[index + 1:]
-
-                        string_list.remove(string)
-                        string_list.append(str_split)
-                        string_list.append(str_remainder)
-                        count += 1
-                        break
-            else:
-                count += 1
-
-        return string_list
+import textwrap
 
 class MainInterface():
 
@@ -116,6 +82,9 @@ class MainInterface():
         # Make a pad for this scrollable list as well
         self.install_pad = curses.newpad(self.install_avail + 4, 36)
         self.install_info = curses.newwin(11, 44, 11, 36)
+
+        # Add a text wrapper for convinence
+        self.wrapper = textwrap.TextWrapper(width=40)
 
     def init_package_info_entry(self):
 
@@ -245,7 +214,7 @@ class MainInterface():
 
         # Gather and print out new information
         option_flag, original_help_message = self.option_dict[current_item]
-        wrapped_help_message = line_wrapper(original_help_message, 40)
+        wrapped_help_message = self.wrapper(original_help_message)
 
         pretty_index = str(index + 1).zfill(2)
         pretty_total = str(self.options_avail).zfill(2)
@@ -286,7 +255,7 @@ class MainInterface():
 
         # Gather and print out new information
         description, default_path = self.install_dict[current_item]
-        wrapped_description = line_wrapper(description, 40)
+        wrapped_description = self.wrapper(description, 40)
         pretty_index = str(index + 1).zfill(2)
         pretty_total = str(self.install_avail).zfill(2)
 

@@ -45,8 +45,11 @@ on a GNU/Linux system:
 ```
 $ git clone https://github.com/KeepPositive/Tadman.git
 $ cd Tadman
-# python3 setup.py install
+$ python3 setup.py --user install
 ```
+
+NOTE: You can also remove the `--user` flag from the command above, but
+this is not recommended.
 
 You should now have an executable named ``tadman-curses`` in your path.
 

@@ -1,6 +1,7 @@
 import os
 import setuptools
 import subprocess
+import tadman
 
 def get_version_number(a_file):
     open_file = open(a_file)
@@ -60,7 +61,8 @@ setuptools.setup(
     # Package info
     name='tadman',
     description="Some package manager written in Python",
-    version = get_version_number('./tadman/__init__.py'),
+    #version = get_version_number('./tadman/__init__.py'),
+    version = tadman.__version__,
     # Author and Project info
     author = "Ted Moseley",
     author_email = "tmoseley1106@gmail.com",
