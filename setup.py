@@ -1,34 +1,23 @@
+# Standard
 import os
-import setuptools
 import subprocess
+# Dependency
+import docutils.core
+import docutils.writers
+import setuptools
+# Project
 import tadman
 
-def get_version_number(a_file):
-    open_file = open(a_file)
 
-    for a_line in open_file:
-        if '__version__' in a_line:
-            split_list = a_line.split()
-            version_number = split_list[-1][1:-1]
-            break
-    open_file.close()
+def parse_manpage(string):
 
-    return version_number
+    return docutils.core.publish_string(source=string,
+                                        writer_name="manpage")
 
-def which(a_file):
-    for a_path in os.environ["PATH"].split(os.pathsep):
-
-        test_path = os.path.join(a_path, a_file)
-
-        if os.path.exists(test_path):
-            return test_path
-
-    else:
-        return None
 
 class InstallManpage(setuptools.Command):
 
-    description = 'Build and Install the manpage using asciidoctor'
+    description = "Build manpage using docutils and install it"
     user_options = []
     boolean_options = []
 
@@ -39,42 +28,34 @@ class InstallManpage(setuptools.Command):
         pass
 
     def run(self):
-        input_file = "%s/MANPAGE.adoc" % os.getcwd()
-        output_file = "/usr/share/man/man8/tadman.8"
+        input_file = os.path.abspath("tadman-curses.8.rst")
+        output_file = "/usr/share/man/man8/tadman-curses.8"
 
-        asciidoctor_path = which('asciidoctor')
+        with open(input_file) as a_file:
+            print("Opening reStructuredText file {}".format(input_file))
+            contents = a_file.read()
 
-        if asciidoctor_path:
-            command = [asciidoctor_path, "--backend", "manpage", "--doctype",
-                       "manpage", "--out-file", output_file, input_file]
+        processed = parse_manpage(contents)
+        print("Processed manpage file using docutils")
 
-            return_value = subprocess.check_call(command)
+        with open(output_file, 'w') as a_file:
+            print("Writing output file {}".format(output_file))
+            a_file.write(processed.decode())
 
-            if return_value == 0:
-                print("Tadman manpage installed at %s" % output_file)
-            else:
-                print("Manpage failed to build!")
-        else:
-            print("Asciidoctor not found in path, please install it")
+        print("Manpage installed!")
+
 
 setuptools.setup(
-    # Package info
     name='tadman',
     description="Some package manager written in Python",
-    #version = get_version_number('./tadman/__init__.py'),
     version = tadman.__version__,
-    # Author and Project info
     author = "Ted Moseley",
     author_email = "tmoseley1106@gmail.com",
-    url = "https://github.com/KeepPositive/Tadman",
-    # File/Directory info
+    url = "https://gitlab.com/Tad-OS/Tadman",
     packages = ["tadman"],
     scripts = ["bin/tadman-curses"],
-    # Test related
-    setup_requires=['pytest-runner'],
-    tests_require=['pytest'],
-    # Docs related
+    # For the manpage command
     cmdclass = {
-        'build_man': InstallManpage
+        "install_manpage": InstallManpage
     }
 )

@@ -214,7 +214,7 @@ class MainInterface():
 
         # Gather and print out new information
         option_flag, original_help_message = self.option_dict[current_item]
-        wrapped_help_message = self.wrapper(original_help_message)
+        wrapped_help_message = self.wrapper.wrap(original_help_message)
 
         pretty_index = str(index + 1).zfill(2)
         pretty_total = str(self.options_avail).zfill(2)
@@ -255,7 +255,7 @@ class MainInterface():
 
         # Gather and print out new information
         description, default_path = self.install_dict[current_item]
-        wrapped_description = self.wrapper(description, 40)
+        wrapped_description = self.wrapper.wrap(description)
         pretty_index = str(index + 1).zfill(2)
         pretty_total = str(self.install_avail).zfill(2)
 

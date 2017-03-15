@@ -1,5 +1,6 @@
-import pytest
-
+# Standard
+import os
+# Project
 from tadman import autotools
 
 def get_file_contents(a_file):
@@ -14,7 +15,7 @@ def get_file_contents(a_file):
 
 def test_first_occurance():
 
-    in_file = get_file_contents('./test/data/configure1.txt')
+    in_file = get_file_contents(os.path.abspath("tests/data/configure1.txt"))
 
     occurance = autotools.find_first(in_file, 'Optional Features:\n')
 
